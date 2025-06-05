@@ -12,13 +12,13 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { useWizard } from '../../context/WizardContext';
-import { uploadFile, deleteFile, getFileMetadata } from '../../services/googleDrive';
 
 export default function Images() {
   const { formData, addImage, removeImage } = useWizard();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Upload file to Google Drive via API route
   const handleFileUpload = async (event) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -34,19 +34,26 @@ export default function Images() {
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        
-        // Upload file to Google Drive
-        const uploadResult = await uploadFile(file, formData.folderId);
-        
-        // Get file metadata
-        const metadata = await getFileMetadata(uploadResult.id);
-        
-        // Add image to state
+        // Prepare form data for upload
+        const data = new FormData();
+        data.append('file', file);
+        data.append('folderId', formData.folderId);
+        data.append('action', 'upload');
+        // Call the API route
+        const response = await fetch('/api/googleDrive', {
+          method: 'POST',
+          body: data
+        });
+        if (!response.ok) {
+          const resData = await response.json();
+          throw new Error(resData.error || 'Failed to upload image');
+        }
+        const resData = await response.json();
         addImage({
-          id: metadata.id,
-          name: metadata.name,
-          url: metadata.thumbnailLink || metadata.webViewLink,
-          driveUrl: metadata.webViewLink
+          id: resData.id,
+          name: file.name,
+          url: resData.thumbnailLink || resData.webViewLink,
+          driveUrl: resData.webViewLink
         });
       }
     } catch (error) {
@@ -57,9 +64,18 @@ export default function Images() {
     }
   };
 
+  // Delete file from Google Drive via API route
   const handleDelete = async (index, imageId) => {
     try {
-      await deleteFile(imageId);
+      const response = await fetch('/api/googleDrive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', fileId: imageId })
+      });
+      if (!response.ok) {
+        const resData = await response.json();
+        throw new Error(resData.error || 'Failed to delete image');
+      }
       removeImage(index);
     } catch (error) {
       console.error('Error deleting file:', error);
