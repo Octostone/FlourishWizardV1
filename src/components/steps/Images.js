@@ -23,6 +23,11 @@ export default function Images() {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
+    if (!formData.folderId) {
+      setError('No folder selected. Please go back to the first step and select a folder.');
+      return;
+    }
+
     setUploading(true);
     setError(null);
 
@@ -61,6 +66,18 @@ export default function Images() {
       setError('Failed to delete image. Please try again.');
     }
   };
+
+  if (!formData.folderId) {
+    return (
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <Alert severity="warning">
+            Please go back to the first step and select a Google Drive folder before uploading images.
+          </Alert>
+        </Grid>
+      </Grid>
+    );
+  }
 
   return (
     <Grid container spacing={3}>

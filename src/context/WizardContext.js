@@ -7,7 +7,8 @@ export function WizardProvider({ children }) {
     // Client Info
     accountManager: '',
     outputName: '',
-    folderUrl: '',
+    folderId: '', // Google Drive folder ID
+    folderUrl: '', // Google Drive folder URL
     
     // Client Details
     clientName: '',
@@ -38,7 +39,7 @@ export function WizardProvider({ children }) {
     images: []
   });
 
-  const updateFormData = (step, data) => {
+  const updateFormData = (section, data) => {
     setFormData(prev => ({
       ...prev,
       ...data

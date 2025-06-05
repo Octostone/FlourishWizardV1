@@ -1,88 +1,112 @@
-// Google Drive API configuration
-const FOLDER_ID = 'YOUR_FOLDER_ID'; // Replace with your Google Drive folder ID
+import { google } from 'googleapis';
 
-// Function to initialize Google Drive API
-export const initGoogleDrive = async () => {
-  try {
-    // Load the Google Drive API
-    await window.gapi.client.load('drive', 'v3');
-    return true;
-  } catch (error) {
-    console.error('Error initializing Google Drive:', error);
-    return false;
-  }
+// Initialize Google Drive API
+const initGoogleDrive = async () => {
+  const auth = new google.auth.GoogleAuth({
+    credentials: JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS),
+    scopes: ['https://www.googleapis.com/auth/drive.file']
+  });
+
+  return google.drive({ version: 'v3', auth });
 };
 
-// Function to create a folder in Google Drive
-export const createFolder = async (folderName) => {
+// Create a folder in Google Drive
+export const createFolder = async (folderName, parentFolderId) => {
   try {
-    const response = await window.gapi.client.drive.files.create({
-      resource: {
-        name: folderName,
-        mimeType: 'application/vnd.google-apps.folder',
-        parents: [FOLDER_ID]
-      },
+    const drive = await initGoogleDrive();
+    const fileMetadata = {
+      name: folderName,
+      mimeType: 'application/vnd.google-apps.folder',
+      parents: [parentFolderId]
+    };
+
+    const response = await drive.files.create({
+      resource: fileMetadata,
       fields: 'id'
     });
-    return response.result.id;
+
+    return response.data;
   } catch (error) {
     console.error('Error creating folder:', error);
     throw error;
   }
 };
 
-// Function to upload a file to Google Drive
+// Upload a file to Google Drive
 export const uploadFile = async (file, folderId) => {
+  if (!folderId) {
+    throw new Error('Folder ID is required for file upload');
+  }
+
   try {
-    const metadata = {
+    const drive = await initGoogleDrive();
+    const fileMetadata = {
       name: file.name,
-      mimeType: file.type,
       parents: [folderId]
     };
 
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-    form.append('file', file);
+    const media = {
+      mimeType: file.type,
+      body: file
+    };
 
-    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${window.gapi.auth.getToken().access_token}`
-      },
-      body: form
+    const response = await drive.files.create({
+      resource: fileMetadata,
+      media: media,
+      fields: 'id'
     });
 
-    const result = await response.json();
-    return result;
+    return response.data;
   } catch (error) {
     console.error('Error uploading file:', error);
     throw error;
   }
 };
 
-// Function to get file metadata
+// Get file metadata
 export const getFileMetadata = async (fileId) => {
   try {
-    const response = await window.gapi.client.drive.files.get({
+    const drive = await initGoogleDrive();
+    const response = await drive.files.get({
       fileId: fileId,
       fields: 'id, name, webViewLink, thumbnailLink'
     });
-    return response.result;
+
+    return response.data;
   } catch (error) {
     console.error('Error getting file metadata:', error);
     throw error;
   }
 };
 
-// Function to delete a file from Google Drive
+// Delete a file from Google Drive
 export const deleteFile = async (fileId) => {
   try {
-    await window.gapi.client.drive.files.delete({
+    const drive = await initGoogleDrive();
+    await drive.files.delete({
       fileId: fileId
     });
-    return true;
   } catch (error) {
     console.error('Error deleting file:', error);
+    throw error;
+  }
+};
+
+// Copy template to user's folder
+export const copyTemplate = async (templateId, folderId, newName) => {
+  try {
+    const drive = await initGoogleDrive();
+    const response = await drive.files.copy({
+      fileId: templateId,
+      resource: {
+        name: newName,
+        parents: [folderId]
+      }
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Error copying template:', error);
     throw error;
   }
 }; 

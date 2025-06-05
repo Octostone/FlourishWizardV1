@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useWizard } from '../src/context/WizardContext';
+import ClientInfo from '../src/components/steps/ClientInfo';
 import ClientDetails from '../src/components/steps/ClientDetails';
 import AppInformation from '../src/components/steps/AppInformation';
 import Events from '../src/components/steps/Events';
@@ -23,7 +24,7 @@ import Images from '../src/components/steps/Images';
 import { writeToSheet, SHEET_NAMES } from '../src/services/googleSheets';
 
 const steps = [
-  'Client Information',
+  'Client Info',
   'Client Details',
   'App Information',
   'Events',
@@ -35,9 +36,12 @@ const steps = [
 const StyledPaper = styled(Paper)(({ theme }) => ({
   marginTop: theme.spacing(3),
   marginBottom: theme.spacing(3),
-  padding: theme.spacing(3),
-  width: '80%',
-  margin: '0 auto'
+  padding: theme.spacing(2),
+  [theme.breakpoints.up(600 + theme.spacing(3) * 2)]: {
+    marginTop: theme.spacing(6),
+    marginBottom: theme.spacing(6),
+    padding: theme.spacing(3),
+  },
 }));
 
 export default function Home() {
@@ -69,44 +73,7 @@ export default function Home() {
   const renderStepContent = (step) => {
     switch (step) {
       case 0:
-        return (
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <TextField
-                select
-                fullWidth
-                label="Account Manager"
-                value={accountManager}
-                onChange={(e) => updateFormData('clientInfo', { accountManager: e.target.value })}
-                required
-              >
-                <MenuItem value="">Select Account Manager</MenuItem>
-                <MenuItem value="John Doe">John Doe</MenuItem>
-                <MenuItem value="Jane Smith">Jane Smith</MenuItem>
-              </TextField>
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Output File Name"
-                value={outputName}
-                onChange={(e) => updateFormData('clientInfo', { outputName: e.target.value })}
-                placeholder="e.g., Client_App_Date"
-                required
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Output Folder Location"
-                value={folderUrl}
-                onChange={(e) => updateFormData('clientInfo', { folderUrl: e.target.value })}
-                placeholder="e.g., /path/to/folder"
-                required
-              />
-            </Grid>
-          </Grid>
-        );
+        return <ClientInfo />;
       case 1:
         return <ClientDetails />;
       case 2:
@@ -125,43 +92,49 @@ export default function Home() {
   };
 
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ my: 4 }}>
-        <Typography variant="h3" component="h1" gutterBottom align="center">
+    <Container component="main" maxWidth="md">
+      <StyledPaper elevation={3}>
+        <Typography component="h1" variant="h4" align="center" gutterBottom>
           Flourish Wizard
         </Typography>
-        
-        <StyledPaper elevation={3}>
-          <Stepper activeStep={activeStep} alternativeLabel>
-            {steps.map((label) => (
-              <Step key={label}>
-                <StepLabel>{label}</StepLabel>
-              </Step>
-            ))}
-          </Stepper>
-          
-          <Box sx={{ mt: 4 }}>
-            {renderStepContent(activeStep)}
-          </Box>
-
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-            <Button
-              disabled={activeStep === 0}
-              onClick={handleBack}
-              variant="outlined"
-            >
-              Back
-            </Button>
-            <Button
-              variant="contained"
-              onClick={handleNext}
-              disabled={activeStep === steps.length - 1}
-            >
-              {activeStep === steps.length - 1 ? 'Finish' : 'Next'}
-            </Button>
-          </Box>
-        </StyledPaper>
-      </Box>
+        <Stepper activeStep={activeStep} sx={{ pt: 3, pb: 5 }}>
+          {steps.map((label) => (
+            <Step key={label}>
+              <StepLabel>{label}</StepLabel>
+            </Step>
+          ))}
+        </Stepper>
+        <>
+          {activeStep === steps.length ? (
+            <>
+              <Typography variant="h5" gutterBottom>
+                Thank you for your submission.
+              </Typography>
+              <Typography variant="subtitle1">
+                Your form has been submitted successfully.
+              </Typography>
+            </>
+          ) : (
+            <>
+              {renderStepContent(activeStep)}
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+                {activeStep !== 0 && (
+                  <Button onClick={handleBack} sx={{ mt: 3, ml: 1 }}>
+                    Back
+                  </Button>
+                )}
+                <Button
+                  variant="contained"
+                  onClick={handleNext}
+                  sx={{ mt: 3, ml: 1 }}
+                >
+                  {activeStep === steps.length - 1 ? 'Submit' : 'Next'}
+                </Button>
+              </Box>
+            </>
+          )}
+        </>
+      </StyledPaper>
     </Container>
   );
 } 
