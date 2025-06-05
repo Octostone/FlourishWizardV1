@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <?!= include('Stylesheet'); ?>
+  </head>
+  <body>
+    <div class="container">
+      <h1 style="text-align: center;">Flourish Wizard</h1>
+      
+      <div class="form-group">
+        <label>Welcome. Please select inputting user name below</label>
+        <select id="accountManager" class="form-control">
+          <option value="">-- Select --</option>
+        </select>
+        <div class="error-message" id="accountManagerError"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Name your output Excel file (this will become the Google Sheet name)</label>
+        <input type="text" id="outputName" class="form-control" placeholder="e.g., Client_App_Date">
+        <div class="error-message" id="outputNameError"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Paste Google Drive folder URL to save the file</label>
+        <input type="text" id="folderUrl" class="form-control" placeholder="e.g., https://drive.google.com/drive/folders/A...">
+        <div class="error-message" id="folderUrlError"></div>
+      </div>
+
+      <div class="error-message" id="generalError" style="display: none;"></div>
+
+      <div id="loadingMessage" style="display: none; text-align: center; margin: 20px 0;">
+        <p>Creating your document and setting up the wizard...</p>
+        <div class="loading-spinner"></div>
+      </div>
+
+      <div style="text-align: center; margin-top: 30px;">
+        <label style="font-weight: 500; margin-bottom: 15px; display: block;">What would you like to do?</label>
+        <div class="action-buttons">
+          <button class="btn btn-action" onclick="window.landingPage.navigateToSection('newClient')">
+            Add New Client, App, Campaign and Offers
+          </button>
+          <button class="btn btn-action" onclick="window.landingPage.navigateToSection('newApp')">
+            Add an App, Campaign and Offers
+          </button>
+          <button class="btn btn-action" onclick="window.landingPage.navigateToSection('newCampaign')">
+            Add a Campaign and Offers
+          </button>
+          <button class="btn btn-action" onclick="window.landingPage.navigateToSection('newOffers')">
+            Add Offers to an existing Campaign
+          </button>
+          <button class="btn btn-action" onclick="window.landingPage.navigateToSection('updateImages')">
+            Update Images only
+          </button>
+        </div>
+      </div>
+
+      <div style="position: fixed; bottom: 20px; left: 20px;">
+        <button class="btn btn-outline" onclick="window.landingPage.showAdminLogin()">Admin Access</button>
+      </div>
+    </div>
+
+    <script>
+      // Create a namespace for our functions
+      window.landingPage = (function() {
+        // Private variables
+        const savedState = <?!= data ? JSON.stringify(data) : "null" ?>;
+        console.log('Landing: Initial saved state:', savedState);
+
+        // Private functions
+        function loadAccountManagers(managers) {
+          console.log('Landing: Loading account managers, received:', managers);
+          const select = document.getElementById('accountManager');
+          console.log('Landing: Current select value before populating:', select.value);
+          
+          managers.forEach(manager => {
+            const option = document.createElement('option');
+            option.value = manager;
+            option.textContent = manager;
+            select.appendChild(option);
+            console.log('Landing: Added manager option:', manager);
+          });
+
+          // Check if we need to restore a previous selection
+          if (savedState && !savedState.isNewSession && savedState.accountManager) {
+            console.log('Landing: Restoring previous account manager selection:', savedState.accountManager);
+            select.value = savedState.accountManager;
+            console.log('Landing: Dropdown value after setting:', select.value);
+          }
+        }
+
+        function validateForm() {
+          const accountManager = document.getElementById('accountManager').value;
+          const outputName = document.getElementById('outputName').value;
+          const folderUrl = document.getElementById('folderUrl').value;
+
+          // Reset error states
+          document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+          document.querySelectorAll('.form-control').forEach(el => el.classList.remove('error'));
+
+          let isValid = true;
+
+          if (!accountManager) {
+            showFieldError('accountManager', 'Please select an account manager');
+            isValid = false;
+          }
+
+          if (!outputName) {
+            showFieldError('outputName', 'Please enter a file name');
+            isValid = false;
+          }
+
+          return isValid;
+        }
+
+        function showFieldError(fieldId, message) {
+          const field = document.getElementById(fieldId);
+          const errorDiv = document.getElementById(fieldId + 'Error');
+          field.classList.add('error');
+          errorDiv.textContent = message;
+        }
+
+        function handleError(error) {
+          console.error('Error:', error);
+          const errorDiv = document.getElementById('generalError');
+          errorDiv.textContent = typeof error === 'string' ? error : 'An error occurred. Please try again.';
+          errorDiv.style.display = 'block';
+        }
+
+        function showLoading(show) {
+          const buttons = document.querySelectorAll('.btn');
+          buttons.forEach(btn => btn.disabled = show);
+          document.getElementById('loadingMessage').style.display = show ? 'block' : 'none';
+        }
+
+        // Initialize when the page loads
+        window.addEventListener('load', function() {
+          console.log('Window loaded, initializing...');
+          google.script.run
+            .withSuccessHandler(function(managers) {
+              loadAccountManagers(managers);
+              // Only pre-fill fields if we have saved state and it's not a new session
+              if (savedState && !savedState.isNewSession) {
+                if (savedState.accountManager) {
+                  document.getElementById('accountManager').value = savedState.accountManager;
+                }
+                if (savedState.outputName) {
+                  document.getElementById('outputName').value = savedState.outputName;
+                }
+                if (savedState.folderUrl) {
+                  document.getElementById('folderUrl').value = savedState.folderUrl;
+                }
+              }
+            })
+            .withFailureHandler(handleError)
+            .getAccountManagers();
+        });
+
+        // Public API
+        return {
+          navigateToSection: function(section) {
+            if (!validateForm()) return;
+
+            // Show loading state
+            showLoading(true);
+
+            const data = {
+              accountManager: document.getElementById('accountManager').value,
+              outputName: document.getElementById('outputName').value,
+              driveFolder: document.getElementById('folderUrl').value
+            };
+
+            console.log('Navigating with data:', data);
+
+            google.script.run
+              .withSuccessHandler(function(response) {
+                console.log('Received response:', response);
+                if (response.success) {
+                  document.open();
+                  document.write(response.content);
+                  document.close();
+                } else {
+                  showLoading(false);
+                  if (response.errors) {
+                    Object.keys(response.errors).forEach(field => {
+                      if (field === 'general') {
+                        handleError(response.errors[field]);
+                      } else {
+                        showFieldError(field, response.errors[field]);
+                      }
+                    });
+                  } else {
+                    handleError('Failed to process request');
+                  }
+                }
+              })
+              .withFailureHandler(function(error) {
+                console.error('Navigation error:', error);
+                showLoading(false);
+                handleError(error);
+              })
+              .processLandingPage(data);
+          },
+
+          showAdminLogin: function() {
+            google.script.run
+              .withSuccessHandler(function(content) {
+                document.open();
+                document.write(content);
+                document.close();
+              })
+              .withFailureHandler(handleError)
+              .showAdminLogin();
+          }
+        };
+      })();
+    </script>
+  </body>
+</html> 

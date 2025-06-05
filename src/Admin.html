@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <?!= include('Stylesheet'); ?>
+  <script>
+    // Version History Comment Block
+    // v0.1.0 - Initial admin page implementation
+    // Future versions will be added here, keeping last 5 versions
+
+    function onLoad() {
+      loadAccountManagers();
+      loadGeos();
+      loadFieldRestrictions();
+    }
+
+    function loadAccountManagers() {
+      google.script.run
+        .withSuccessHandler(function(managers) {
+          const list = document.getElementById('accountManagersList');
+          list.innerHTML = '';
+          managers.forEach(manager => {
+            list.innerHTML += `
+              <div class="admin-toggle">
+                <span>${manager}</span>
+                <button class="btn btn-danger" onclick="removeAccountManager('${manager}')">Remove</button>
+              </div>
+            `;
+          });
+        })
+        .withFailureHandler(handleError)
+        .getAccountManagers();
+    }
+
+    function loadGeos() {
+      google.script.run
+        .withSuccessHandler(function(geos) {
+          const list = document.getElementById('geosList');
+          list.innerHTML = '';
+          geos.forEach(geo => {
+            list.innerHTML += `
+              <div class="admin-toggle">
+                <span>${geo}</span>
+                <button class="btn btn-danger" onclick="removeGeo('${geo}')">Remove</button>
+              </div>
+            `;
+          });
+        })
+        .withFailureHandler(handleError)
+        .getGeos();
+    }
+
+    function loadFieldRestrictions() {
+      google.script.run
+        .withSuccessHandler(function(enabled) {
+          document.getElementById('fieldRestrictions').checked = enabled;
+        })
+        .withFailureHandler(handleError)
+        .getFieldRestrictions();
+    }
+
+    function addAccountManager() {
+      const input = document.getElementById('newAccountManager');
+      const name = input.value.trim();
+      
+      if (!name) {
+        showError('Please enter a name');
+        return;
+      }
+
+      google.script.run
+        .withSuccessHandler(function() {
+          input.value = '';
+          loadAccountManagers();
+        })
+        .withFailureHandler(handleError)
+        .addAccountManager(name);
+    }
+
+    function removeAccountManager(name) {
+      if (!confirm(`Remove ${name} from the list?`)) return;
+
+      google.script.run
+        .withSuccessHandler(loadAccountManagers)
+        .withFailureHandler(handleError)
+        .removeAccountManager(name);
+    }
+
+    function addGeo() {
+      const input = document.getElementById('newGeo');
+      const geo = input.value.trim().toUpperCase();
+      
+      if (!geo) {
+        showError('Please enter a Geo code');
+        return;
+      }
+
+      google.script.run
+        .withSuccessHandler(function() {
+          input.value = '';
+          loadGeos();
+        })
+        .withFailureHandler(handleError)
+        .addGeo(geo);
+    }
+
+    function removeGeo(geo) {
+      if (!confirm(`Remove ${geo} from the list?`)) return;
+
+      google.script.run
+        .withSuccessHandler(loadGeos)
+        .withFailureHandler(handleError)
+        .removeGeo(geo);
+    }
+
+    function toggleFieldRestrictions() {
+      const enabled = document.getElementById('fieldRestrictions').checked;
+      
+      google.script.run
+        .withSuccessHandler(function(result) {
+          document.getElementById('fieldRestrictions').checked = result;
+        })
+        .withFailureHandler(handleError)
+        .toggleFieldRestrictions(enabled);
+    }
+
+    function showError(message) {
+      const errorDiv = document.getElementById('error-message');
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+      setTimeout(() => {
+        errorDiv.style.display = 'none';
+      }, 3000);
+    }
+
+    function handleError(error) {
+      console.error('Error:', error);
+      showError('An error occurred. Please try again.');
+    }
+
+    function goBack() {
+      google.script.run
+        .withSuccessHandler(function(content) {
+          document.open();
+          document.write(content);
+          document.close();
+        })
+        .withFailureHandler(handleError)
+        .doGet();
+    }
+  </script>
+</head>
+<body onload="onLoad()">
+  <div class="container">
+    <h1 style="text-align: center;">Admin Settings</h1>
+    
+    <div class="error-message" id="error-message"></div>
+
+    <div class="admin-section">
+      <h2>Field Restrictions</h2>
+      <div class="admin-toggle">
+        <label>
+          <input type="checkbox" id="fieldRestrictions" onchange="toggleFieldRestrictions()">
+          Enable field restrictions and validations
+        </label>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h2>Account Managers</h2>
+      <div id="accountManagersList"></div>
+      <div class="form-group" style="margin-top: 20px;">
+        <input type="text" id="newAccountManager" class="form-control" placeholder="Enter new account manager name">
+        <button class="btn btn-primary" style="margin-top: 10px;" onclick="addAccountManager()">Add Account Manager</button>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h2>Geos</h2>
+      <div id="geosList"></div>
+      <div class="form-group" style="margin-top: 20px;">
+        <input type="text" id="newGeo" class="form-control" placeholder="Enter new Geo code (e.g., US, CA)">
+        <button class="btn btn-primary" style="margin-top: 10px;" onclick="addGeo()">Add Geo</button>
+      </div>
+    </div>
+
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="goBack()">Back to Landing Page</button>
+    </div>
+  </div>
+</body>
+</html> 

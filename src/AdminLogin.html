@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <?!= include('Stylesheet'); ?>
+  <script>
+    // Version History Comment Block
+    // v0.1.0 - Initial admin login implementation
+    // Future versions will be added here, keeping last 5 versions
+
+    function validateAndLogin() {
+      const password = document.getElementById('password').value;
+      const errorDiv = document.getElementById('error-message');
+      
+      if (!password) {
+        errorDiv.textContent = 'Password is required';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      google.script.run
+        .withSuccessHandler(function(isValid) {
+          if (isValid) {
+            google.script.run
+              .withSuccessHandler(function(content) {
+                document.open();
+                document.write(content);
+                document.close();
+              })
+              .withFailureHandler(handleError)
+              .getAdminPage();
+          } else {
+            errorDiv.textContent = 'Invalid password';
+            errorDiv.style.display = 'block';
+          }
+        })
+        .withFailureHandler(handleError)
+        .validateAdminPassword(password);
+    }
+
+    function handleError(error) {
+      const errorDiv = document.getElementById('error-message');
+      errorDiv.textContent = 'An error occurred. Please try again.';
+      errorDiv.style.display = 'block';
+      console.error('Error:', error);
+    }
+
+    function goBack() {
+      google.script.run
+        .withSuccessHandler(function(content) {
+          document.open();
+          document.write(content);
+          document.close();
+        })
+        .withFailureHandler(handleError)
+        .doGet();
+    }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h1 style="text-align: center;">Admin Access</h1>
+    
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input type="password" id="password" class="form-control" placeholder="Enter admin password">
+      <div class="error-message" id="error-message"></div>
+    </div>
+
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="goBack()">Back</button>
+      <button class="btn btn-primary" onclick="validateAndLogin()">Login</button>
+    </div>
+  </div>
+</body>
+</html> 

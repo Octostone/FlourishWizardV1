@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <?!= include('Stylesheet'); ?>
+    <script>
+      // Version History Comment Block
+      // v0.1.0 - Initial client details implementation
+      // Future versions will be added here, keeping last 5 versions
+
+      const savedState = JSON.parse('<?!= JSON.stringify(data) ?>');
+
+      window.onload = function() {
+        // Pre-fill account manager if available
+        if (savedState && savedState.accountManager) {
+          document.getElementById('accountManager').value = savedState.accountManager;
+        }
+
+        // Update progress indicator
+        updateProgress(2);
+      };
+
+      function updateProgress(step) {
+        const steps = document.querySelectorAll('.step');
+        steps.forEach((stepEl, index) => {
+          if (index < step) {
+            stepEl.classList.add('completed');
+          } else if (index === step) {
+            stepEl.classList.add('active');
+          }
+        });
+      }
+
+      function validateForm() {
+        const clientUrl = document.getElementById('clientUrl').value;
+        const clientDescription = document.getElementById('clientDescription').value;
+        const clientContact = document.getElementById('clientContact').value;
+        const contactEmail = document.getElementById('contactEmail').value;
+        let isValid = true;
+
+        // Reset error states
+        document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+        document.querySelectorAll('.form-control').forEach(el => el.classList.remove('error'));
+
+        if (!clientUrl) {
+          showFieldError('clientUrl', 'Please enter the client URL');
+          isValid = false;
+        } else {
+          try {
+            new URL(clientUrl);
+          } catch (e) {
+            showFieldError('clientUrl', 'Please enter a valid URL');
+            isValid = false;
+          }
+        }
+
+        if (!clientDescription) {
+          showFieldError('clientDescription', 'Please enter a client description');
+          isValid = false;
+        } else if (clientDescription.length < 10) {
+          showFieldError('clientDescription', 'Description should be at least 10 characters long');
+          isValid = false;
+        }
+
+        if (!clientContact) {
+          showFieldError('clientContact', 'Please enter a primary contact name');
+          isValid = false;
+        }
+
+        if (!contactEmail) {
+          showFieldError('contactEmail', 'Please enter a contact email');
+          isValid = false;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
+          showFieldError('contactEmail', 'Please enter a valid email address');
+          isValid = false;
+        }
+
+        return isValid;
+      }
+
+      function showFieldError(fieldId, message) {
+        const field = document.getElementById(fieldId);
+        const errorDiv = document.getElementById(fieldId + 'Error');
+        field.classList.add('error');
+        errorDiv.textContent = message;
+      }
+
+      function handleError(error) {
+        console.error('Error:', error);
+        const errorDiv = document.getElementById('generalError');
+        errorDiv.textContent = 'An error occurred. Please try again.';
+        errorDiv.style.display = 'block';
+      }
+
+      function goBack() {
+        google.script.run
+          .withSuccessHandler(function(content) {
+            document.open();
+            document.write(content);
+            document.close();
+          })
+          .withFailureHandler(handleError)
+          .navigateBack('ClientDetails');
+      }
+
+      function proceed() {
+        if (!validateForm()) return;
+
+        const data = {
+          clientUrl: document.getElementById('clientUrl').value,
+          clientDescription: document.getElementById('clientDescription').value,
+          clientContact: document.getElementById('clientContact').value,
+          contactEmail: document.getElementById('contactEmail').value,
+          accountManager: document.getElementById('accountManager').value
+        };
+
+        google.script.run
+          .withSuccessHandler(function(response) {
+            if (response.success) {
+              document.open();
+              document.write(response.content);
+              document.close();
+            } else {
+              handleError(response.error || 'Failed to proceed');
+            }
+          })
+          .withFailureHandler(handleError)
+          .processClientDetails(data);
+      }
+    </script>
+  </head>
+  <body>
+    <div class="container">
+      <h1 style="text-align: center;">Flourish Wizard</h1>
+      
+      <div class="progress-steps">
+        <div class="step completed">1</div>
+        <div class="step completed">2</div>
+        <div class="step active">3</div>
+        <div class="step">4</div>
+        <div class="step">5</div>
+        <div class="step">6</div>
+        <div class="step">7</div>
+      </div>
+
+      <h2 style="text-align: center;">Client Details</h2>
+      <p>Please enter detailed information about the client.</p>
+
+      <div class="error-message" id="generalError" style="display: none;"></div>
+      
+      <div class="form-group">
+        <label for="clientUrl">Client Website URL</label>
+        <input type="url" id="clientUrl" class="form-control" placeholder="https://www.example.com">
+        <div class="error-message" id="clientUrlError"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="clientDescription">Client Description</label>
+        <textarea id="clientDescription" class="form-control" rows="4" placeholder="Enter a detailed description of the client"></textarea>
+        <div class="error-message" id="clientDescriptionError"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="clientContact">Primary Contact Name</label>
+        <input type="text" id="clientContact" class="form-control" placeholder="Enter primary contact name">
+        <div class="error-message" id="clientContactError"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="contactEmail">Contact Email</label>
+        <input type="email" id="contactEmail" class="form-control" placeholder="contact@example.com">
+        <div class="error-message" id="contactEmailError"></div>
+      </div>
+
+      <input type="hidden" id="accountManager" value="">
+      
+      <div class="nav-buttons">
+        <button class="btn btn-secondary" onclick="goBack()">Back</button>
+        <button class="btn btn-primary" onclick="proceed()">Next</button>
+      </div>
+    </div>
+  </body>
+</html> 

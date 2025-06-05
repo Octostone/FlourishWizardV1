@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <?!= include('Stylesheet'); ?>
+    <script>
+      // Version History Comment Block
+      // v0.1.0 - Initial app details implementation
+      // Future versions will be added here, keeping last 5 versions
+
+      const savedState = JSON.parse('<?!= JSON.stringify(data) ?>');
+
+      window.onload = function() {
+        // Pre-fill account manager if available
+        if (savedState && savedState.accountManager) {
+          document.getElementById('accountManager').value = savedState.accountManager;
+        }
+
+        // Update progress indicator
+        updateProgress(3);
+      };
+
+      function updateProgress(step) {
+        const steps = document.querySelectorAll('.step');
+        steps.forEach((stepEl, index) => {
+          if (index < step) {
+            stepEl.classList.add('completed');
+          } else if (index === step) {
+            stepEl.classList.add('active');
+          }
+        });
+      }
+
+      function validateForm() {
+        const appName = document.getElementById('appName').value;
+        const appId = document.getElementById('appId').value;
+        const appCategory = document.getElementById('appCategory').value;
+        const appDescription = document.getElementById('appDescription').value;
+        let isValid = true;
+
+        // Reset error states
+        document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+        document.querySelectorAll('.form-control').forEach(el => el.classList.remove('error'));
+
+        if (!appName) {
+          showFieldError('appName', 'Please enter the app name');
+          isValid = false;
+        }
+
+        if (!appId) {
+          showFieldError('appId', 'Please enter the app ID');
+          isValid = false;
+        }
+
+        if (!appCategory) {
+          showFieldError('appCategory', 'Please select an app category');
+          isValid = false;
+        }
+
+        if (!appDescription) {
+          showFieldError('appDescription', 'Please enter an app description');
+          isValid = false;
+        } else if (appDescription.length < 10) {
+          showFieldError('appDescription', 'Description should be at least 10 characters long');
+          isValid = false;
+        }
+
+        return isValid;
+      }
+
+      function showFieldError(fieldId, message) {
+        const field = document.getElementById(fieldId);
+        const errorDiv = document.getElementById(fieldId + 'Error');
+        field.classList.add('error');
+        errorDiv.textContent = message;
+      }
+
+      function handleError(error) {
+        console.error('Error:', error);
+        const errorDiv = document.getElementById('generalError');
+        errorDiv.textContent = 'An error occurred. Please try again.';
+        errorDiv.style.display = 'block';
+      }
+
+      function goBack() {
+        google.script.run
+          .withSuccessHandler(function(content) {
+            document.open();
+            document.write(content);
+            document.close();
+          })
+          .withFailureHandler(handleError)
+          .navigateBack('AppDetails');
+      }
+
+      function proceed() {
+        if (!validateForm()) return;
+
+        const data = {
+          appName: document.getElementById('appName').value,
+          appId: document.getElementById('appId').value,
+          appCategory: document.getElementById('appCategory').value,
+          appDescription: document.getElementById('appDescription').value,
+          accountManager: document.getElementById('accountManager').value
+        };
+
+        google.script.run
+          .withSuccessHandler(function(response) {
+            if (response.success) {
+              document.open();
+              document.write(response.content);
+              document.close();
+            } else {
+              handleError(response.error || 'Failed to proceed');
+            }
+          })
+          .withFailureHandler(handleError)
+          .processAppDetails(data);
+      }
+    </script>
+  </head>
+  <body>
+    <div class="container">
+      <h1 style="text-align: center;">Flourish Wizard</h1>
+      
+      <div class="progress-steps">
+        <div class="step completed">1</div>
+        <div class="step completed">2</div>
+        <div class="step completed">3</div>
+        <div class="step active">4</div>
+        <div class="step">5</div>
+        <div class="step">6</div>
+        <div class="step">7</div>
+      </div>
+
+      <h2 style="text-align: center;">App Details</h2>
+      <p>Please enter information about the application.</p>
+
+      <div class="error-message" id="generalError" style="display: none;"></div>
+      
+      <div class="form-group">
+        <label for="appName">App Name</label>
+        <input type="text" id="appName" class="form-control" placeholder="Enter app name">
+        <div class="error-message" id="appNameError"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="appId">App ID</label>
+        <input type="text" id="appId" class="form-control" placeholder="Enter app ID">
+        <div class="error-message" id="appIdError"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="appCategory">App Category</label>
+        <select id="appCategory" class="form-control">
+          <option value="">Select Category</option>
+          <option value="games">Games</option>
+          <option value="productivity">Productivity</option>
+          <option value="entertainment">Entertainment</option>
+          <option value="social">Social</option>
+          <option value="utilities">Utilities</option>
+          <option value="education">Education</option>
+          <option value="business">Business</option>
+          <option value="lifestyle">Lifestyle</option>
+        </select>
+        <div class="error-message" id="appCategoryError"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="appDescription">App Description</label>
+        <textarea id="appDescription" class="form-control" rows="4" placeholder="Enter a detailed description of the app"></textarea>
+        <div class="error-message" id="appDescriptionError"></div>
+      </div>
+
+      <input type="hidden" id="accountManager" value="">
+      
+      <div class="nav-buttons">
+        <button class="btn btn-secondary" onclick="goBack()">Back</button>
+        <button class="btn btn-primary" onclick="proceed()">Next</button>
+      </div>
+    </div>
+  </body>
+</html> 

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <?!= include('Stylesheet'); ?>
+  </head>
+  <body>
+    <div class="container">
+      <h1 style="text-align: center;">Flourish Wizard</h1>
+      
+      <div class="progress-steps">
+        <div class="step completed">1</div>
+        <div class="step active">2</div>
+        <div class="step">3</div>
+        <div class="step">4</div>
+        <div class="step">5</div>
+        <div class="step">6</div>
+        <div class="step">7</div>
+      </div>
+
+      <h2 style="text-align: center;">Client Basics</h2>
+      <p>Please enter the basic information about the client.</p>
+
+      <div class="error-message" id="generalError" style="display: none;"></div>
+      
+      <div class="form-group">
+        <label for="commonName">Client Common Name or DBA Name</label>
+        <input type="text" id="commonName" class="form-control" placeholder="Enter client common name or DBA">
+        <div class="error-message" id="commonNameError"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="billingName">Client Billing Name</label>
+        <input type="text" id="billingName" class="form-control" placeholder="Enter client billing name">
+        <div class="error-message" id="billingNameError"></div>
+      </div>
+      
+      <div class="form-group">
+        <label for="accountManager">Account Manager</label>
+        <select id="accountManager" class="form-control">
+          <option value="">Select Account Manager</option>
+        </select>
+        <div class="error-message" id="accountManagerError"></div>
+      </div>
+      
+      <div class="nav-buttons">
+        <button class="btn btn-secondary" onclick="window.clientBasics.goBack()">Back</button>
+        <button class="btn btn-primary" onclick="window.clientBasics.proceed()">Next</button>
+      </div>
+
+      <div id="loadingMessage" style="display: none;">
+        <div style="text-align: center; margin: 20px 0;">
+          <p>Processing...</p>
+          <div class="loading-spinner"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Create a namespace for our functions
+      window.clientBasics = (function() {
+        // Private variables
+        const savedState = <?!= JSON.stringify(data) ?>;
+        console.log('Initial saved state in ClientBasics:', savedState);
+
+        // Private functions
+        function updateProgress(step) {
+          const steps = document.querySelectorAll('.step');
+          steps.forEach((stepEl, index) => {
+            if (index < step) {
+              stepEl.classList.add('completed');
+            } else if (index === step) {
+              stepEl.classList.add('active');
+            }
+          });
+        }
+
+        function loadAccountManagers() {
+          console.log('ClientBasics: Loading account managers...');
+          google.script.run
+            .withSuccessHandler(function(managers) {
+              console.log('ClientBasics: Received managers:', managers);
+              populateAccountManagers(managers);
+            })
+            .withFailureHandler(function(error) {
+              console.error('ClientBasics: Failed to load managers:', error);
+              handleError('Failed to load account managers: ' + error);
+            })
+            .getAccountManagers();
+        }
+
+        function populateAccountManagers(managers) {
+          console.log('ClientBasics: Populating account managers dropdown');
+          const select = document.getElementById('accountManager');
+          console.log('ClientBasics: Current select value before populating:', select.value);
+          select.innerHTML = '<option value="">Select Account Manager</option>';
+          
+          if (Array.isArray(managers)) {
+            managers.forEach(manager => {
+              const option = document.createElement('option');
+              option.value = manager;
+              option.textContent = manager;
+              select.appendChild(option);
+              console.log('ClientBasics: Added manager option:', manager);
+            });
+          }
+
+          // Set the selected value if we have it in saved state
+          if (savedState && savedState.accountManager) {
+            console.log('ClientBasics: Setting selected account manager to:', savedState.accountManager);
+            select.value = savedState.accountManager;
+            console.log('ClientBasics: Dropdown value after setting:', select.value);
+          } else {
+            console.log('ClientBasics: No saved account manager in state');
+          }
+        }
+
+        function validateForm() {
+          const commonName = document.getElementById('commonName').value;
+          const billingName = document.getElementById('billingName').value;
+          const accountManager = document.getElementById('accountManager').value;
+          let isValid = true;
+
+          // Reset error states
+          document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+          document.querySelectorAll('.form-control').forEach(el => el.classList.remove('error'));
+
+          if (!commonName) {
+            showFieldError('commonName', 'Please enter the client common name');
+            isValid = false;
+          }
+
+          if (!billingName) {
+            showFieldError('billingName', 'Please enter the client billing name');
+            isValid = false;
+          }
+
+          if (!accountManager) {
+            showFieldError('accountManager', 'Please select an account manager');
+            isValid = false;
+          }
+
+          return isValid;
+        }
+
+        function showFieldError(fieldId, message) {
+          const field = document.getElementById(fieldId);
+          const errorDiv = document.getElementById(fieldId + 'Error');
+          if (field) field.classList.add('error');
+          if (errorDiv) errorDiv.textContent = message;
+        }
+
+        function handleError(error) {
+          console.error('Error:', error);
+          const errorDiv = document.getElementById('generalError');
+          errorDiv.textContent = typeof error === 'string' ? error : 'An error occurred. Please try again.';
+          errorDiv.style.display = 'block';
+        }
+
+        function showLoading(show) {
+          const buttons = document.querySelectorAll('.btn');
+          buttons.forEach(btn => btn.disabled = show);
+          document.getElementById('loadingMessage').style.display = show ? 'block' : 'none';
+        }
+
+        // Initialize when the page loads
+        window.addEventListener('load', function() {
+          console.log('Window loaded, initializing...');
+          updateProgress(1);
+          loadAccountManagers();
+        });
+
+        // Public API
+        return {
+          goBack: function() {
+            console.log('Navigating back...');
+            showLoading(true);
+            
+            google.script.run
+              .withSuccessHandler(function(content) {
+                console.log('Received back navigation content');
+                document.open();
+                document.write(content);
+                document.close();
+              })
+              .withFailureHandler(function(error) {
+                console.error('Back navigation failed:', error);
+                showLoading(false);
+                handleError(error);
+              })
+              .doGet();
+          },
+
+          proceed: function() {
+            if (!validateForm()) return;
+
+            console.log('Proceeding with form submission...');
+            showLoading(true);
+
+            const data = {
+              commonName: document.getElementById('commonName').value,
+              billingName: document.getElementById('billingName').value,
+              accountManager: document.getElementById('accountManager').value
+            };
+
+            // Preserve data from saved state
+            if (savedState) {
+              data.outputName = savedState.outputName;
+              data.folderUrl = savedState.folderUrl;
+            }
+
+            console.log('Submitting data:', data);
+
+            google.script.run
+              .withSuccessHandler(function(response) {
+                console.log('Received response:', response);
+                if (response && response.success) {
+                  document.open();
+                  document.write(response.content);
+                  document.close();
+                } else {
+                  showLoading(false);
+                  handleError(response ? response.error : 'Failed to proceed');
+                }
+              })
+              .withFailureHandler(function(error) {
+                console.error('Submission failed:', error);
+                showLoading(false);
+                handleError(error);
+              })
+              .processClientBasics(data);
+          }
+        };
+      })();
+    </script>
+  </body>
+</html> 

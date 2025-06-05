@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <?!= include('Stylesheet'); ?>
+    <script>
+      // Version History Comment Block
+      // v0.1.0 - Initial events implementation
+      // Future versions will be added here, keeping last 5 versions
+
+      const savedState = JSON.parse('<?!= JSON.stringify(data) ?>');
+
+      window.onload = function() {
+        // Pre-fill account manager if available
+        if (savedState && savedState.accountManager) {
+          document.getElementById('accountManager').value = savedState.accountManager;
+        }
+
+        // Update progress indicator
+        updateProgress(4);
+
+        // Initialize event list
+        initializeEventList();
+      };
+
+      function updateProgress(step) {
+        const steps = document.querySelectorAll('.step');
+        steps.forEach((stepEl, index) => {
+          if (index < step) {
+            stepEl.classList.add('completed');
+          } else if (index === step) {
+            stepEl.classList.add('active');
+          }
+        });
+      }
+
+      function initializeEventList() {
+        // Add first event row by default
+        addEventRow();
+
+        // If there are saved events, load them
+        if (savedState && savedState.events) {
+          savedState.events.forEach((event, index) => {
+            if (index > 0) addEventRow(); // Add rows for additional events
+            document.getElementById(`eventName_${index}`).value = event.name;
+            document.getElementById(`eventType_${index}`).value = event.type;
+            document.getElementById(`eventValue_${index}`).value = event.value;
+          });
+        }
+      }
+
+      function addEventRow() {
+        const eventList = document.getElementById('eventList');
+        const eventCount = eventList.children.length;
+        
+        const eventRow = document.createElement('div');
+        eventRow.className = 'event-row';
+        eventRow.innerHTML = `
+          <div class="form-group">
+            <label for="eventName_${eventCount}">Event Name</label>
+            <input type="text" id="eventName_${eventCount}" class="form-control" placeholder="Enter event name">
+            <div class="error-message" id="eventName_${eventCount}Error"></div>
+          </div>
+          <div class="form-group">
+            <label for="eventType_${eventCount}">Event Type</label>
+            <select id="eventType_${eventCount}" class="form-control">
+              <option value="">Select Type</option>
+              <option value="click">Click</option>
+              <option value="view">View</option>
+              <option value="conversion">Conversion</option>
+              <option value="custom">Custom</option>
+            </select>
+            <div class="error-message" id="eventType_${eventCount}Error"></div>
+          </div>
+          <div class="form-group">
+            <label for="eventValue_${eventCount}">Event Value</label>
+            <input type="number" id="eventValue_${eventCount}" class="form-control" placeholder="Enter event value">
+            <div class="error-message" id="eventValue_${eventCount}Error"></div>
+          </div>
+          ${eventCount > 0 ? '<button type="button" class="btn btn-danger" onclick="removeEventRow(this)">Remove</button>' : ''}
+        `;
+        
+        eventList.appendChild(eventRow);
+      }
+
+      function removeEventRow(button) {
+        button.parentElement.remove();
+      }
+
+      function validateForm() {
+        const eventRows = document.getElementById('eventList').children;
+        let isValid = true;
+
+        // Reset error states
+        document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+        document.querySelectorAll('.form-control').forEach(el => el.classList.remove('error'));
+
+        Array.from(eventRows).forEach((row, index) => {
+          const eventName = document.getElementById(`eventName_${index}`).value;
+          const eventType = document.getElementById(`eventType_${index}`).value;
+          const eventValue = document.getElementById(`eventValue_${index}`).value;
+
+          if (!eventName) {
+            showFieldError(`eventName_${index}`, 'Please enter event name');
+            isValid = false;
+          }
+
+          if (!eventType) {
+            showFieldError(`eventType_${index}`, 'Please select event type');
+            isValid = false;
+          }
+
+          if (!eventValue || isNaN(eventValue)) {
+            showFieldError(`eventValue_${index}`, 'Please enter a valid numeric value');
+            isValid = false;
+          }
+        });
+
+        return isValid;
+      }
+
+      function showFieldError(fieldId, message) {
+        const field = document.getElementById(fieldId);
+        const errorDiv = document.getElementById(fieldId + 'Error');
+        field.classList.add('error');
+        errorDiv.textContent = message;
+      }
+
+      function handleError(error) {
+        console.error('Error:', error);
+        const errorDiv = document.getElementById('generalError');
+        errorDiv.textContent = 'An error occurred. Please try again.';
+        errorDiv.style.display = 'block';
+      }
+
+      function goBack() {
+        google.script.run
+          .withSuccessHandler(function(content) {
+            document.open();
+            document.write(content);
+            document.close();
+          })
+          .withFailureHandler(handleError)
+          .navigateBack('Events');
+      }
+
+      function proceed() {
+        if (!validateForm()) return;
+
+        const eventRows = document.getElementById('eventList').children;
+        const events = Array.from(eventRows).map((row, index) => ({
+          name: document.getElementById(`eventName_${index}`).value,
+          type: document.getElementById(`eventType_${index}`).value,
+          value: document.getElementById(`eventValue_${index}`).value
+        }));
+
+        const data = {
+          events: events,
+          accountManager: document.getElementById('accountManager').value
+        };
+
+        google.script.run
+          .withSuccessHandler(function(response) {
+            if (response.success) {
+              document.open();
+              document.write(response.content);
+              document.close();
+            } else {
+              handleError(response.error || 'Failed to proceed');
+            }
+          })
+          .withFailureHandler(handleError)
+          .processEvents(data);
+      }
+    </script>
+    <style>
+      .event-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr auto;
+        gap: 1rem;
+        align-items: end;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 4px;
+      }
+      
+      .btn-danger {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        height: 38px;
+      }
+      
+      .btn-danger:hover {
+        background-color: #c82333;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1 style="text-align: center;">Flourish Wizard</h1>
+      
+      <div class="progress-steps">
+        <div class="step completed">1</div>
+        <div class="step completed">2</div>
+        <div class="step completed">3</div>
+        <div class="step completed">4</div>
+        <div class="step active">5</div>
+        <div class="step">6</div>
+        <div class="step">7</div>
+      </div>
+
+      <h2 style="text-align: center;">Events</h2>
+      <p>Please configure the events for tracking.</p>
+
+      <div class="error-message" id="generalError" style="display: none;"></div>
+      
+      <div id="eventList"></div>
+
+      <button type="button" class="btn btn-secondary" onclick="addEventRow()" style="margin-bottom: 2rem;">
+        Add Another Event
+      </button>
+
+      <input type="hidden" id="accountManager" value="">
+      
+      <div class="nav-buttons">
+        <button class="btn btn-secondary" onclick="goBack()">Back</button>
+        <button class="btn btn-primary" onclick="proceed()">Next</button>
+      </div>
+    </div>
+  </body>
+</html> 
