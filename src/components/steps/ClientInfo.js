@@ -52,11 +52,19 @@ export default function ClientInfo() {
     return true;
   };
 
-  // Simulate Google Drive copy logic (replace with real API call)
+  // Call the API route to copy the template sheet
   const copyTemplateSheet = async (outputName, folderId) => {
-    // TODO: Replace with real Google Drive API call
-    // For now, just return a fake sheet ID
-    return new Promise((resolve) => setTimeout(() => resolve('NEW_SHEET_ID'), 1000));
+    const response = await fetch('/api/googleDrive', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ outputName, folderId })
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to copy template');
+    }
+    const data = await response.json();
+    return data.sheetId;
   };
 
   // Handler for navigation buttons
@@ -78,7 +86,7 @@ export default function ClientInfo() {
       // Progress to the correct step
       if (setActiveStep) setActiveStep(targetStep);
     } catch (err) {
-      setError('Failed to create sheet. Please try again.');
+      setError(err.message || 'Failed to create sheet. Please try again.');
     } finally {
       setLoading(false);
     }
