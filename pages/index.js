@@ -1,19 +1,16 @@
 import { useState } from 'react';
-import { 
-  Container, 
-  Paper, 
-  Typography, 
-  Box, 
-  Stepper, 
-  Step, 
+import {
+  Container,
+  Paper,
+  Stepper,
+  Step,
   StepLabel,
   Button,
-  TextField,
-  MenuItem,
-  Grid
+  Typography,
+  Box
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { useWizard } from '../src/context/WizardContext';
+import { WizardProvider, useWizard } from '../src/context/WizardContext';
 import ClientInfo from '../src/components/steps/ClientInfo';
 import ClientDetails from '../src/components/steps/ClientDetails';
 import AppInformation from '../src/components/steps/AppInformation';
@@ -21,10 +18,9 @@ import Events from '../src/components/steps/Events';
 import Campaign from '../src/components/steps/Campaign';
 import Offers from '../src/components/steps/Offers';
 import Images from '../src/components/steps/Images';
-import { writeToSheet, SHEET_NAMES } from '../src/services/googleSheets';
 
 const steps = [
-  'Client Info',
+  'Client Information',
   'Client Details',
   'App Information',
   'Events',
@@ -44,25 +40,11 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   },
 }));
 
-export default function Home() {
+function WizardContent() {
   const [activeStep, setActiveStep] = useState(0);
-  const { formData, updateFormData } = useWizard();
-  const { accountManager, outputName, folderUrl } = formData;
+  const { formData } = useWizard();
 
-  const handleNext = async () => {
-    if (activeStep === steps.length - 1) {
-      // On the last step, save all data to Google Sheets
-      try {
-        await writeToSheet(SHEET_NAMES.CLIENT_INFO, [
-          accountManager,
-          outputName,
-          folderUrl
-        ]);
-        // Add more sheet writes for other data...
-      } catch (error) {
-        console.error('Error saving data:', error);
-      }
-    }
+  const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
 
@@ -87,7 +69,7 @@ export default function Home() {
       case 6:
         return <Images />;
       default:
-        return <Typography>Step {step + 1} content coming soon...</Typography>;
+        throw new Error('Unknown step');
     }
   };
 
@@ -97,13 +79,15 @@ export default function Home() {
         <Typography component="h1" variant="h4" align="center" gutterBottom>
           Flourish Wizard
         </Typography>
-        <Stepper activeStep={activeStep} sx={{ pt: 3, pb: 5 }}>
-          {steps.map((label) => (
-            <Step key={label}>
-              <StepLabel>{label}</StepLabel>
-            </Step>
-          ))}
-        </Stepper>
+        {activeStep > 0 && (
+          <Stepper activeStep={activeStep - 1} sx={{ pt: 3, pb: 5 }}>
+            {steps.map((label) => (
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+        )}
         <>
           {activeStep === steps.length ? (
             <>
@@ -136,5 +120,13 @@ export default function Home() {
         </>
       </StyledPaper>
     </Container>
+  );
+}
+
+export default function Home() {
+  return (
+    <WizardProvider>
+      <WizardContent />
+    </WizardProvider>
   );
 } 

@@ -1,97 +1,194 @@
-import { Grid, TextField, Button, Alert } from '@mui/material';
-import { Formik, Form } from 'formik';
+import { useState } from 'react';
+import { Grid, TextField, Button, Alert, MenuItem, Box } from '@mui/material';
 import { useWizard } from '../../context/WizardContext';
-import { clientInfoSchema } from '../../validation/schemas';
+
+// Placeholder account managers; will be editable via admin in the future
+const accountManagers = [
+  '-- Select --',
+  'User 1',
+  'User 2',
+  'User 3'
+];
+
+// Google Sheet template ID
+const TEMPLATE_ID = '1vaW7egSNhsLoWVvG2VpqnUwdd_shiZ6fq0kpaj3vNbk';
 
 export default function ClientInfo() {
-  const { formData, updateFormData } = useWizard();
-  const { accountManager, outputName, folderUrl } = formData;
+  const { formData, updateFormData, setSheetId, setActiveStep } = useWizard();
+  const [fields, setFields] = useState({
+    accountManager: formData.accountManager || '',
+    outputName: formData.outputName || '',
+    folderUrl: formData.folderUrl || ''
+  });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const initialValues = {
-    accountManager,
-    outputName,
-    folderUrl
+  // Helper to extract folder ID from URL
+  const extractFolderId = (url) => {
+    if (!url) return '';
+    const match = url.match(/\/folders\/([a-zA-Z0-9-_]+)/);
+    return match ? match[1] : '';
   };
 
-  const handleSubmit = (values) => {
-    // Extract folder ID from URL
-    const folderId = values.folderUrl.split('/folders/')[1]?.split('?')[0];
-    if (!folderId) {
-      throw new Error('Invalid Google Drive folder URL');
+  // Validate required fields
+  const validate = () => {
+    if (!fields.accountManager || fields.accountManager === '-- Select --') {
+      setError('Please select an account manager.');
+      return false;
     }
+    if (!fields.outputName) {
+      setError('Please enter an output file name.');
+      return false;
+    }
+    if (!fields.folderUrl) {
+      setError('Please enter a Google Drive folder URL.');
+      return false;
+    }
+    if (!extractFolderId(fields.folderUrl)) {
+      setError('Invalid Google Drive folder URL.');
+      return false;
+    }
+    setError('');
+    return true;
+  };
 
-    updateFormData('clientInfo', {
-      ...values,
-      folderId
-    });
+  // Simulate Google Drive copy logic (replace with real API call)
+  const copyTemplateSheet = async (outputName, folderId) => {
+    // TODO: Replace with real Google Drive API call
+    // For now, just return a fake sheet ID
+    return new Promise((resolve) => setTimeout(() => resolve('NEW_SHEET_ID'), 1000));
+  };
+
+  // Handler for navigation buttons
+  const handleNavigate = async (targetStep) => {
+    if (!validate()) return;
+    setLoading(true);
+    try {
+      const folderId = extractFolderId(fields.folderUrl);
+      // Copy the template and get the new sheet ID
+      const newSheetId = await copyTemplateSheet(fields.outputName, folderId);
+      // Store all info in context
+      updateFormData('clientInfo', {
+        ...fields,
+        folderId,
+        sheetId: newSheetId
+      });
+      // Store the new sheet ID for use in all steps
+      if (setSheetId) setSheetId(newSheetId);
+      // Progress to the correct step
+      if (setActiveStep) setActiveStep(targetStep);
+    } catch (err) {
+      setError('Failed to create sheet. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <Formik
-      initialValues={initialValues}
-      validationSchema={clientInfoSchema}
-      onSubmit={handleSubmit}
-      enableReinitialize
-    >
-      {({ values, errors, touched, handleChange, handleBlur, handleSubmit }) => (
-        <Form>
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Account Manager"
-                name="accountManager"
-                value={values.accountManager}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={touched.accountManager && Boolean(errors.accountManager)}
-                helperText={touched.accountManager && errors.accountManager}
-                required
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Output Name"
-                name="outputName"
-                value={values.outputName}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={touched.outputName && Boolean(errors.outputName)}
-                helperText={touched.outputName && errors.outputName}
-                required
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Google Drive Folder URL"
-                name="folderUrl"
-                value={values.folderUrl}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={touched.folderUrl && Boolean(errors.folderUrl)}
-                helperText={
-                  (touched.folderUrl && errors.folderUrl) ||
-                  'Paste the URL of your Google Drive folder here'
-                }
-                required
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Alert severity="info" sx={{ mb: 2 }}>
-                To get your Google Drive folder URL:
-                <ol>
-                  <li>Open Google Drive</li>
-                  <li>Navigate to the folder where you want to store the template and images</li>
-                  <li>Click the "Share" button</li>
-                  <li>Copy the folder URL from your browser's address bar</li>
-                </ol>
-              </Alert>
-            </Grid>
+    <form>
+      <Grid container spacing={3} justifyContent="center">
+        <Grid item xs={12}>
+          <TextField
+            select
+            fullWidth
+            label="Account Manager"
+            name="accountManager"
+            value={fields.accountManager}
+            onChange={e => setFields(f => ({ ...f, accountManager: e.target.value }))}
+            required
+          >
+            {accountManagers.map((name) => (
+              <MenuItem key={name} value={name}>{name}</MenuItem>
+            ))}
+          </TextField>
+        </Grid>
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            label="Name your output Excel file (this will become the Google Sheet name)"
+            name="outputName"
+            value={fields.outputName}
+            onChange={e => setFields(f => ({ ...f, outputName: e.target.value }))}
+            placeholder="e.g., Client_App_Date"
+            required
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            label="Paste Google Drive folder URL to save the file"
+            name="folderUrl"
+            value={fields.folderUrl}
+            onChange={e => setFields(f => ({ ...f, folderUrl: e.target.value }))}
+            placeholder="e.g., https://drive.google.com/drive/folders/AI..."
+            required
+          />
+        </Grid>
+        {error && (
+          <Grid item xs={12}>
+            <Alert severity="error">{error}</Alert>
           </Grid>
-        </Form>
-      )}
-    </Formik>
+        )}
+        <Grid item xs={12}>
+          <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
+            <Button
+              className="btn-action"
+              fullWidth
+              variant="contained"
+              disabled={loading}
+              onClick={() => handleNavigate(1)}
+            >
+              Add New Client, App, Campaign and Offers
+            </Button>
+            <Button
+              className="btn-action"
+              fullWidth
+              variant="contained"
+              disabled={loading}
+              onClick={() => handleNavigate(2)}
+            >
+              Add an App, Campaign and Offers
+            </Button>
+            <Button
+              className="btn-action"
+              fullWidth
+              variant="contained"
+              disabled={loading}
+              onClick={() => handleNavigate(4)}
+            >
+              Add a Campaign and Offers
+            </Button>
+            <Button
+              className="btn-action"
+              fullWidth
+              variant="contained"
+              disabled={loading}
+              onClick={() => handleNavigate(5)}
+            >
+              Add Offers to an existing Campaign
+            </Button>
+            <Button
+              className="btn-action"
+              fullWidth
+              variant="contained"
+              disabled={loading}
+              onClick={() => handleNavigate(6)}
+            >
+              Update Images only
+            </Button>
+          </Box>
+        </Grid>
+        <Grid item xs={12}>
+          <Box position="fixed" bottom={20} left={20}>
+            <Button
+              variant="outlined"
+              onClick={() => alert('Admin Access coming soon!')}
+            >
+              Admin Access
+            </Button>
+          </Box>
+        </Grid>
+      </Grid>
+    </form>
   );
 } 
