@@ -5,37 +5,60 @@ import {
   Paper,
   Box,
   IconButton,
-  Button
+  Button,
+  CircularProgress,
+  Alert
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { useWizard } from '../../context/WizardContext';
+import { uploadFile, deleteFile, getFileMetadata } from '../../services/googleDrive';
 
 export default function Images() {
   const { formData, addImage, removeImage } = useWizard();
   const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleFileUpload = async (event) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
     setUploading(true);
+    setError(null);
+
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        // Here you would typically upload to Google Drive
-        // For now, we'll just add the file info to our state
+        
+        // Upload file to Google Drive
+        const uploadResult = await uploadFile(file, formData.folderId);
+        
+        // Get file metadata
+        const metadata = await getFileMetadata(uploadResult.id);
+        
+        // Add image to state
         addImage({
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          url: URL.createObjectURL(file)
+          id: metadata.id,
+          name: metadata.name,
+          url: metadata.thumbnailLink || metadata.webViewLink,
+          driveUrl: metadata.webViewLink
         });
       }
     } catch (error) {
       console.error('Error uploading files:', error);
+      setError('Failed to upload images. Please try again.');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleDelete = async (index, imageId) => {
+    try {
+      await deleteFile(imageId);
+      removeImage(index);
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      setError('Failed to delete image. Please try again.');
     }
   };
 
@@ -58,12 +81,13 @@ export default function Images() {
               onChange={handleFileUpload}
               style={{ display: 'none' }}
               id="image-upload"
+              disabled={uploading}
             />
             <label htmlFor="image-upload">
               <Button
                 variant="contained"
                 component="span"
-                startIcon={<CloudUploadIcon />}
+                startIcon={uploading ? <CircularProgress size={20} /> : <CloudUploadIcon />}
                 disabled={uploading}
               >
                 {uploading ? 'Uploading...' : 'Upload Images'}
@@ -75,6 +99,14 @@ export default function Images() {
           </Box>
         </Paper>
       </Grid>
+
+      {error && (
+        <Grid item xs={12}>
+          <Alert severity="error" onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        </Grid>
+      )}
 
       <Grid item xs={12}>
         <Typography variant="h6" gutterBottom>
@@ -110,14 +142,25 @@ export default function Images() {
                   <Typography variant="body2" noWrap>
                     {image.name}
                   </Typography>
-                  <IconButton
-                    size="small"
-                    color="error"
-                    onClick={() => removeImage(index)}
-                    aria-label="delete image"
-                  >
-                    <DeleteIcon />
-                  </IconButton>
+                  <Box>
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      href={image.driveUrl}
+                      target="_blank"
+                      aria-label="view in drive"
+                    >
+                      <CloudUploadIcon />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => handleDelete(index, image.id)}
+                      aria-label="delete image"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
                 </Box>
               </Paper>
             </Grid>
