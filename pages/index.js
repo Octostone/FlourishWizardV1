@@ -13,6 +13,14 @@ import {
   Grid
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { useWizard } from '../src/context/WizardContext';
+import ClientDetails from '../src/components/steps/ClientDetails';
+import AppInformation from '../src/components/steps/AppInformation';
+import Events from '../src/components/steps/Events';
+import Campaign from '../src/components/steps/Campaign';
+import Offers from '../src/components/steps/Offers';
+import Images from '../src/components/steps/Images';
+import { writeToSheet, SHEET_NAMES } from '../src/services/googleSheets';
 
 const steps = [
   'Client Information',
@@ -34,11 +42,23 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
 
 export default function Home() {
   const [activeStep, setActiveStep] = useState(0);
-  const [accountManager, setAccountManager] = useState('');
-  const [outputName, setOutputName] = useState('');
-  const [folderUrl, setFolderUrl] = useState('');
+  const { formData, updateFormData } = useWizard();
+  const { accountManager, outputName, folderUrl } = formData;
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    if (activeStep === steps.length - 1) {
+      // On the last step, save all data to Google Sheets
+      try {
+        await writeToSheet(SHEET_NAMES.CLIENT_INFO, [
+          accountManager,
+          outputName,
+          folderUrl
+        ]);
+        // Add more sheet writes for other data...
+      } catch (error) {
+        console.error('Error saving data:', error);
+      }
+    }
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
 
@@ -57,7 +77,7 @@ export default function Home() {
                 fullWidth
                 label="Account Manager"
                 value={accountManager}
-                onChange={(e) => setAccountManager(e.target.value)}
+                onChange={(e) => updateFormData('clientInfo', { accountManager: e.target.value })}
                 required
               >
                 <MenuItem value="">Select Account Manager</MenuItem>
@@ -70,7 +90,7 @@ export default function Home() {
                 fullWidth
                 label="Output File Name"
                 value={outputName}
-                onChange={(e) => setOutputName(e.target.value)}
+                onChange={(e) => updateFormData('clientInfo', { outputName: e.target.value })}
                 placeholder="e.g., Client_App_Date"
                 required
               />
@@ -80,14 +100,25 @@ export default function Home() {
                 fullWidth
                 label="Output Folder Location"
                 value={folderUrl}
-                onChange={(e) => setFolderUrl(e.target.value)}
+                onChange={(e) => updateFormData('clientInfo', { folderUrl: e.target.value })}
                 placeholder="e.g., /path/to/folder"
                 required
               />
             </Grid>
           </Grid>
         );
-      // Add more cases for other steps
+      case 1:
+        return <ClientDetails />;
+      case 2:
+        return <AppInformation />;
+      case 3:
+        return <Events />;
+      case 4:
+        return <Campaign />;
+      case 5:
+        return <Offers />;
+      case 6:
+        return <Images />;
       default:
         return <Typography>Step {step + 1} content coming soon...</Typography>;
     }
