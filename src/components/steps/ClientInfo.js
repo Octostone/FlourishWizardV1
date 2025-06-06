@@ -13,6 +13,15 @@ const accountManagers = [
 // Google Sheet template ID
 const TEMPLATE_ID = '1vaW7egSNhsLoWVvG2VpqnUwdd_shiZ6fq0kpaj3vNbk';
 
+// Map button to step index
+const stepMap = {
+  newClient: 1, // Client Details
+  newApp: 2,    // App Information
+  newCampaign: 4, // Campaign
+  newOffers: 5, // Offers
+  updateImages: 6 // Images
+};
+
 export default function ClientInfo() {
   const { formData, updateFormData, setSheetId, setActiveStep } = useWizard();
   const [fields, setFields] = useState({
@@ -68,7 +77,7 @@ export default function ClientInfo() {
   };
 
   // Handler for navigation buttons
-  const handleNavigate = async (targetStep) => {
+  const handleNavigate = async (target) => {
     if (!validate()) return;
     setLoading(true);
     try {
@@ -84,7 +93,7 @@ export default function ClientInfo() {
       // Store the new sheet ID for use in all steps
       if (setSheetId) setSheetId(newSheetId);
       // Progress to the correct step
-      if (setActiveStep) setActiveStep(targetStep);
+      if (setActiveStep) setActiveStep(stepMap[target]);
     } catch (err) {
       setError(err.message || 'Failed to create sheet. Please try again.');
     } finally {
@@ -144,7 +153,7 @@ export default function ClientInfo() {
               fullWidth
               variant="contained"
               disabled={loading}
-              onClick={() => handleNavigate(1)}
+              onClick={() => handleNavigate('newClient')}
             >
               Add New Client, App, Campaign and Offers
             </Button>
@@ -153,7 +162,7 @@ export default function ClientInfo() {
               fullWidth
               variant="contained"
               disabled={loading}
-              onClick={() => handleNavigate(2)}
+              onClick={() => handleNavigate('newApp')}
             >
               Add an App, Campaign and Offers
             </Button>
@@ -162,7 +171,7 @@ export default function ClientInfo() {
               fullWidth
               variant="contained"
               disabled={loading}
-              onClick={() => handleNavigate(4)}
+              onClick={() => handleNavigate('newCampaign')}
             >
               Add a Campaign and Offers
             </Button>
@@ -171,7 +180,7 @@ export default function ClientInfo() {
               fullWidth
               variant="contained"
               disabled={loading}
-              onClick={() => handleNavigate(5)}
+              onClick={() => handleNavigate('newOffers')}
             >
               Add Offers to an existing Campaign
             </Button>
@@ -180,7 +189,7 @@ export default function ClientInfo() {
               fullWidth
               variant="contained"
               disabled={loading}
-              onClick={() => handleNavigate(6)}
+              onClick={() => handleNavigate('updateImages')}
             >
               Update Images only
             </Button>
