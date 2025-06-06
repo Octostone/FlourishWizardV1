@@ -93,28 +93,33 @@ async function handleDelete(req, res) {
 }
 
 export default async function handler(req, res) {
-  if (req.method === 'POST') {
-    // Handle file upload (multipart/form-data)
-    if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
-      return await handleFileUpload(req, res);
-    }
-    // Handle JSON actions
-    let body = req.body;
-    if (typeof body === 'string') {
-      try {
-        body = JSON.parse(body);
-      } catch {
-        return res.status(400).json({ error: 'Invalid JSON' });
+  try {
+    if (req.method === 'POST') {
+      // Handle file upload (multipart/form-data)
+      if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
+        return await handleFileUpload(req, res);
       }
-    }
-    if (body.action === 'delete') {
+      // Handle JSON actions
+      let body = req.body;
+      if (typeof body === 'string') {
+        try {
+          body = JSON.parse(body);
+        } catch {
+          return res.status(400).json({ error: 'Invalid JSON' });
+        }
+      }
+      if (body.action === 'delete') {
+        req.body = body;
+        return await handleDelete(req, res);
+      }
+      // Default: template copy
       req.body = body;
-      return await handleDelete(req, res);
+      return await handleTemplateCopy(req, res);
+    } else {
+      return res.status(405).json({ error: 'Method not allowed' });
     }
-    // Default: template copy
-    req.body = body;
-    return await handleTemplateCopy(req, res);
-  } else {
-    return res.status(405).json({ error: 'Method not allowed' });
+  } catch (error) {
+    console.error('API route error:', error);
+    return res.status(500).json({ error: error.message || 'Unexpected API error' });
   }
 } 

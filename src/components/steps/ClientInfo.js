@@ -102,7 +102,7 @@ export default function ClientInfo() {
   };
 
   return (
-    <form>
+    <form autoComplete="off" onSubmit={e => e.preventDefault()}>
       <Grid container spacing={3} justifyContent="center">
         <Grid item xs={12}>
           <TextField
