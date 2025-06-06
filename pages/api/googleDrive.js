@@ -8,6 +8,22 @@ export const config = {
   },
 };
 
+async function parseJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk;
+    });
+    req.on('end', () => {
+      try {
+        resolve(JSON.parse(body));
+      } catch (e) {
+        reject(new Error('Invalid JSON'));
+      }
+    });
+  });
+}
+
 async function handleTemplateCopy(req, res) {
   const { outputName, folderId } = req.body;
   if (!outputName || !folderId) {
@@ -99,24 +115,16 @@ export default async function handler(req, res) {
       if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
         return await handleFileUpload(req, res);
       }
-      // Handle JSON actions
-      let body = req.body;
-      if (typeof body === 'string') {
-        try {
-          body = JSON.parse(body);
-        } catch {
-          return res.status(400).json({ error: 'Invalid JSON' });
-        }
-      }
+      // Parse JSON body manually
+      const body = await parseJsonBody(req);
       if (!body || typeof body !== 'object') {
         return res.status(400).json({ error: 'Missing or invalid request body' });
       }
+      req.body = body;
       if (body.action === 'delete') {
-        req.body = body;
         return await handleDelete(req, res);
       }
       // Default: template copy
-      req.body = body;
       return await handleTemplateCopy(req, res);
     } else {
       return res.status(405).json({ error: 'Method not allowed' });
