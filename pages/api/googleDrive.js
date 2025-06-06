@@ -108,6 +108,9 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: 'Invalid JSON' });
         }
       }
+      if (!body || typeof body !== 'object') {
+        return res.status(400).json({ error: 'Missing or invalid request body' });
+      }
       if (body.action === 'delete') {
         req.body = body;
         return await handleDelete(req, res);
