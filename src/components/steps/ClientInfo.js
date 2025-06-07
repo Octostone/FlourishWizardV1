@@ -63,16 +63,25 @@ export default function ClientInfo() {
 
   // Call the API route to copy the template sheet
   const copyTemplateSheet = async (outputName, folderId) => {
-    const response = await fetch('/api/googleDrive', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ outputName, folderId })
-    });
+    let response;
+    try {
+      response = await fetch('/api/googleDrive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ outputName, folderId })
+      });
+    } catch (err) {
+      throw new Error('Network error. Please try again.');
+    }
+    let data;
+    try {
+      data = await response.json();
+    } catch (err) {
+      throw new Error('Server error: Invalid response. Please contact support.');
+    }
     if (!response.ok) {
-      const data = await response.json();
       throw new Error(data.error || 'Failed to copy template');
     }
-    const data = await response.json();
     return data.sheetId;
   };
 

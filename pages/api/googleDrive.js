@@ -116,7 +116,12 @@ export default async function handler(req, res) {
         return await handleFileUpload(req, res);
       }
       // Parse JSON body manually
-      const body = await parseJsonBody(req);
+      let body;
+      try {
+        body = await parseJsonBody(req);
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid JSON' });
+      }
       if (!body || typeof body !== 'object') {
         return res.status(400).json({ error: 'Missing or invalid request body' });
       }
@@ -131,6 +136,13 @@ export default async function handler(req, res) {
     }
   } catch (error) {
     console.error('API route error:', error);
-    return res.status(500).json({ error: error.message || 'Unexpected API error' });
+    try {
+      return res.status(500).json({ error: error.message || 'Unexpected API error' });
+    } catch {
+      // If res.status().json() fails, send a plain JSON string
+      res.setHeader('Content-Type', 'application/json');
+      res.statusCode = 500;
+      res.end(JSON.stringify({ error: 'Unexpected API error' }));
+    }
   }
 } 
