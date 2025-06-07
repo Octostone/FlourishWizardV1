@@ -18,6 +18,7 @@ async function parseJsonBody(req) {
       try {
         resolve(JSON.parse(body));
       } catch (e) {
+        console.error('Invalid JSON received:', body);
         reject(new Error('Invalid JSON'));
       }
     });
@@ -27,7 +28,8 @@ async function parseJsonBody(req) {
 async function handleTemplateCopy(req, res) {
   const { outputName, folderId } = req.body;
   if (!outputName || !folderId) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    console.error('Missing required fields:', req.body);
+    return res.status(400).json({ error: 'Missing required fields', details: req.body });
   }
   try {
     const auth = new google.auth.GoogleAuth({
@@ -55,12 +57,14 @@ async function handleFileUpload(req, res) {
   const form = new formidable.IncomingForm();
   form.parse(req, async (err, fields, files) => {
     if (err) {
+      console.error('File upload error:', err);
       return res.status(500).json({ error: 'File upload error' });
     }
     const { folderId } = fields;
     const file = files.file;
     if (!folderId || !file) {
-      return res.status(400).json({ error: 'Missing folderId or file' });
+      console.error('Missing folderId or file:', fields, files);
+      return res.status(400).json({ error: 'Missing folderId or file', details: { fields, files } });
     }
     try {
       const auth = new google.auth.GoogleAuth({
@@ -92,7 +96,8 @@ async function handleFileUpload(req, res) {
 async function handleDelete(req, res) {
   const { fileId } = req.body;
   if (!fileId) {
-    return res.status(400).json({ error: 'Missing fileId' });
+    console.error('Missing fileId:', req.body);
+    return res.status(400).json({ error: 'Missing fileId', details: req.body });
   }
   try {
     const auth = new google.auth.GoogleAuth({
@@ -120,10 +125,12 @@ export default async function handler(req, res) {
       try {
         body = await parseJsonBody(req);
       } catch (e) {
-        return res.status(400).json({ error: 'Invalid JSON' });
+        console.error('Invalid JSON error:', e);
+        return res.status(400).json({ error: 'Invalid JSON', details: e.message });
       }
       if (!body || typeof body !== 'object') {
-        return res.status(400).json({ error: 'Missing or invalid request body' });
+        console.error('Missing or invalid request body:', body);
+        return res.status(400).json({ error: 'Missing or invalid request body', details: body });
       }
       req.body = body;
       if (body.action === 'delete') {
@@ -132,6 +139,7 @@ export default async function handler(req, res) {
       // Default: template copy
       return await handleTemplateCopy(req, res);
     } else {
+      console.error('Method not allowed:', req.method);
       return res.status(405).json({ error: 'Method not allowed' });
     }
   } catch (error) {

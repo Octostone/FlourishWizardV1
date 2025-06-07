@@ -77,7 +77,9 @@ export default function ClientInfo() {
     try {
       data = await response.json();
     } catch (err) {
-      throw new Error('Server error: Invalid response. Please contact support.');
+      const raw = await response.text();
+      console.error('Server returned non-JSON:', raw);
+      throw new Error('Server error: Invalid response. Raw: ' + raw);
     }
     if (!response.ok) {
       throw new Error(data.error || 'Failed to copy template');
