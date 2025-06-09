@@ -27,6 +27,7 @@ async function parseJsonBody(req) {
 
 async function handleTemplateCopy(req, res) {
   const { outputName, folderId } = req.body;
+  console.log('handleTemplateCopy called with:', req.body);
   if (!outputName || !folderId) {
     console.error('Missing required fields:', req.body);
     return res.status(400).json({ error: 'Missing required fields', details: req.body });
@@ -38,6 +39,7 @@ async function handleTemplateCopy(req, res) {
     });
     const drive = google.drive({ version: 'v3', auth });
     const TEMPLATE_ID = '1vaW7egSNhsLoWVvG2VpqnUwdd_shiZ6fq0kpaj3vNbk';
+    console.log('Copying template:', TEMPLATE_ID, 'to folder:', folderId, 'with name:', outputName);
     const copyResponse = await drive.files.copy({
       fileId: TEMPLATE_ID,
       requestBody: {
@@ -46,10 +48,11 @@ async function handleTemplateCopy(req, res) {
       }
     });
     const newSheetId = copyResponse.data.id;
+    console.log('Template copied, newSheetId:', newSheetId);
     return res.status(200).json({ sheetId: newSheetId });
   } catch (error) {
-    console.error('Google Drive API error:', error);
-    return res.status(500).json({ error: error.message || 'Google Drive API error' });
+    console.error('Google Drive API error:', error, error.stack);
+    return res.status(500).json({ error: error.message || 'Google Drive API error', stack: error.stack });
   }
 }
 
@@ -87,8 +90,8 @@ async function handleFileUpload(req, res) {
       });
       return res.status(200).json(uploadResponse.data);
     } catch (error) {
-      console.error('Google Drive upload error:', error);
-      return res.status(500).json({ error: error.message || 'Google Drive upload error' });
+      console.error('Google Drive upload error:', error, error.stack);
+      return res.status(500).json({ error: error.message || 'Google Drive upload error', stack: error.stack });
     }
   });
 }
@@ -108,13 +111,18 @@ async function handleDelete(req, res) {
     await drive.files.delete({ fileId });
     return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('Google Drive delete error:', error);
-    return res.status(500).json({ error: error.message || 'Google Drive delete error' });
+    console.error('Google Drive delete error:', error, error.stack);
+    return res.status(500).json({ error: error.message || 'Google Drive delete error', stack: error.stack });
   }
 }
 
 export default async function handler(req, res) {
   try {
+    console.log('API route called:', req.method, req.url);
+    if (req.method === 'GET' && req.query.test === '1') {
+      console.log('Test endpoint hit');
+      return res.status(200).json({ ok: true, message: 'API route is working' });
+    }
     if (req.method === 'POST') {
       // Handle file upload (multipart/form-data)
       if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
@@ -143,9 +151,9 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: 'Method not allowed' });
     }
   } catch (error) {
-    console.error('API route error:', error);
+    console.error('API route error:', error, error.stack);
     try {
-      return res.status(500).json({ error: error.message || 'Unexpected API error' });
+      return res.status(500).json({ error: error.message || 'Unexpected API error', stack: error.stack });
     } catch {
       // If res.status().json() fails, send a plain JSON string
       res.setHeader('Content-Type', 'application/json');
