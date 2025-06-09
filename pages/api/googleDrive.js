@@ -40,13 +40,16 @@ async function handleTemplateCopy(req, res) {
     const drive = google.drive({ version: 'v3', auth });
     const TEMPLATE_ID = '1vaW7egSNhsLoWVvG2VpqnUwdd_shiZ6fq0kpaj3vNbk';
     console.log('Copying template:', TEMPLATE_ID, 'to folder:', folderId, 'with name:', outputName);
-    const copyResponse = await drive.files.copy({
-      fileId: TEMPLATE_ID,
-      requestBody: {
-        name: outputName,
-        parents: [folderId]
-      }
-    });
+    const copyResponse = await Promise.race([
+      drive.files.copy({
+        fileId: TEMPLATE_ID,
+        requestBody: {
+          name: outputName,
+          parents: [folderId]
+        }
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), 30000)) // 30 second timeout
+    ]);
     const newSheetId = copyResponse.data.id;
     console.log('Template copied, newSheetId:', newSheetId);
     res.status(200).json({ sheetId: newSheetId });
