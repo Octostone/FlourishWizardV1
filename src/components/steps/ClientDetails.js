@@ -2,37 +2,41 @@ import { useState } from 'react';
 import { Grid, TextField, Button, MenuItem, Typography, Box } from '@mui/material';
 import { useWizard } from '../../context/WizardContext';
 
-const accountManagers = [
-  '-- Select --',
-  'User 1',
-  'User 2',
-  'User 3'
+const mmpOptions = [
+  'Adjust',
+  'Appsflyer'
 ];
+const netGrossOptions = ['Net', 'Gross'];
+const baseCmOptions = ['Base', 'CM'];
 
-export default function ClientBasics() {
+export default function ClientDetails() {
   const { formData, updateFormData, activeStep, setActiveStep } = useWizard();
   const [fields, setFields] = useState({
+    mmp: formData['MMP'] || '',
+    netGross: formData['Net/Gross'] || '',
+    grossDeduction: formData['Gross Deduction'] || '',
+    baseCm: formData['Base/CM'] || '',
+    flourishClientName: formData['Flourish Client Name'] || '',
     clientDBAName: formData['Client DBA Name'] || '',
     billingName: formData['Billing Name'] || '',
-    accountManager: formData['Account Manager'] || formData.accountManager || ''
+    accountManager: formData['Account Manager'] || ''
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState({});
+  const [loading, setLoading] = useState(false);
 
   const validate = () => {
-    if (!fields.clientDBAName) {
-      setError('Please enter the client common name or DBA name.');
-      return false;
+    const newError = {};
+    if (!fields.mmp) newError.mmp = 'Please select an MMP.';
+    if (!fields.netGross) newError.netGross = 'Please select Net or Gross.';
+    if (!fields.grossDeduction || !/^[0-9]+$/.test(fields.grossDeduction)) newError.grossDeduction = 'Number values only. Do not put a % sign.';
+    if (!fields.baseCm) newError.baseCm = 'Please select Base or CM.';
+    if (!fields.flourishClientName) {
+      newError.flourishClientName = 'Please enter a name.';
+    } else if (!fields.flourishClientName.endsWith('_flourish') || /[A-Z]/.test(fields.flourishClientName)) {
+      newError.flourishClientName = 'name must end in _flourish, no capitalization';
     }
-    if (!fields.billingName) {
-      setError('Please enter the client billing name.');
-      return false;
-    }
-    if (!fields.accountManager || fields.accountManager === '-- Select --') {
-      setError('Please select an account manager.');
-      return false;
-    }
-    setError('');
-    return true;
+    setError(newError);
+    return Object.keys(newError).length === 0;
   };
 
   const handleChange = (e) => {
@@ -40,14 +44,37 @@ export default function ClientBasics() {
     setFields(f => ({ ...f, [name]: value }));
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!validate()) return;
-    updateFormData('clientBasics', {
-      'Client DBA Name': fields.clientDBAName,
-      'Billing Name': fields.billingName,
-      'Account Manager': fields.accountManager
-    });
-    setActiveStep(activeStep + 1);
+    setLoading(true);
+    try {
+      // Write to Google Sheet via API
+      const response = await fetch('/api/sheets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sheetId: formData.sheetId,
+          tabName: 'ClientInfo',
+          rowData: [
+            fields.clientDBAName,
+            fields.billingName,
+            fields.accountManager
+          ]
+        })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Failed to write to sheet');
+      updateFormData('clientBasics', {
+        'Client DBA Name': fields.clientDBAName,
+        'Billing Name': fields.billingName,
+        'Account Manager': fields.accountManager
+      });
+      setActiveStep(activeStep + 1);
+    } catch (err) {
+      setError({ general: err.message || 'Failed to write to sheet.' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleBack = () => {
@@ -57,51 +84,100 @@ export default function ClientBasics() {
   return (
     <form autoComplete="off" onSubmit={e => e.preventDefault()}>
       <Typography component="h2" variant="h5" align="center" gutterBottom>
-        Client Basics
+        Client Details
       </Typography>
       <Typography align="center" sx={{ mb: 3 }}>
-        Please fill in all of the following fields to create a new client entry.
+        Please fill in all of the following client details.
       </Typography>
       <Grid container spacing={3} justifyContent="center">
         <Grid item xs={12}>
           <TextField
+            select
             fullWidth
-            label="Client Common Name or DBA Name"
-            name="clientDBAName"
-            value={fields.clientDBAName}
+            label="MMP used by client"
+            name="mmp"
+            value={fields.mmp}
             onChange={handleChange}
             required
-          />
+            error={!!error.mmp}
+            helperText={error.mmp}
+          >
+            {mmpOptions.map((name) => (
+              <MenuItem key={name} value={name}>{name}</MenuItem>
+            ))}
+          </TextField>
+        </Grid>
+        <Grid item xs={12}>
+          <TextField
+            select
+            fullWidth
+            label="Is client passing us net or gross values?"
+            name="netGross"
+            value={fields.netGross}
+            onChange={handleChange}
+            required
+            error={!!error.netGross}
+            helperText={error.netGross}
+          >
+            {netGrossOptions.map((name) => (
+              <MenuItem key={name} value={name}>{name}</MenuItem>
+            ))}
+          </TextField>
         </Grid>
         <Grid item xs={12}>
           <TextField
             fullWidth
-            label="Client Billing Name"
-            name="billingName"
-            value={fields.billingName}
+            label="Gross Deduction"
+            name="grossDeduction"
+            value={fields.grossDeduction}
             onChange={handleChange}
             required
+            placeholder="Number values only. Do not put a % sign"
+            error={!!error.grossDeduction}
+            helperText={error.grossDeduction}
+            inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
           />
         </Grid>
         <Grid item xs={12}>
           <TextField
             select
             fullWidth
-            label="Account Manager"
-            name="accountManager"
-            value={fields.accountManager}
+            label="Is client passing base or CM values?"
+            name="baseCm"
+            value={fields.baseCm}
             onChange={handleChange}
             required
+            error={!!error.baseCm}
+            helperText={error.baseCm}
           >
-            {accountManagers.map((name) => (
+            {baseCmOptions.map((name) => (
               <MenuItem key={name} value={name}>{name}</MenuItem>
             ))}
           </TextField>
         </Grid>
-        {error && (
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            label="Flourish Client Name"
+            name="flourishClientName"
+            value={fields.flourishClientName}
+            onChange={handleChange}
+            required
+            error={!!error.flourishClientName}
+            helperText={error.flourishClientName}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': {
+                  borderColor: error.flourishClientName ? 'red' : undefined
+                }
+              }
+            }}
+          />
+        </Grid>
+        {error.general && (
           <Grid item xs={12}>
             <Box mt={2}>
-              <Typography color="error" align="center">{error}</Typography>
+              <Typography color="error" align="center">{error.general}</Typography>
             </Box>
           </Grid>
         )}
@@ -110,7 +186,7 @@ export default function ClientBasics() {
             <Button variant="outlined" onClick={handleBack} sx={{ px: 4, py: 1 }}>
               Back
             </Button>
-            <Button variant="contained" onClick={handleNext} sx={{ px: 4, py: 1 }}>
+            <Button variant="contained" onClick={handleNext} sx={{ px: 4, py: 1 }} disabled={loading}>
               Next
             </Button>
           </Box>
