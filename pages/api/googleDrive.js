@@ -23,23 +23,20 @@ async function handleTemplateCopy(req, res) {
     const drive = google.drive({ version: 'v3', auth });
     const TEMPLATE_ID = '1vaW7egSNhsLoWVvG2VpqnUwdd_shiZ6fq0kpaj3vNbk';
     console.log('About to call drive.files.copy');
-    // const copyResponse = await Promise.race([
-    //   drive.files.copy({
-    //     fileId: TEMPLATE_ID,
-    //     requestBody: {
-    //       name: outputName,
-    //       parents: [folderId]
-    //     }
-    //   }),
-    //   new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), 30000)) // 30 second timeout
-    // ]);
-    // console.log('Finished drive.files.copy');
-    // const newSheetId = copyResponse.data.id;
-    // console.log('Template copied, newSheetId:', newSheetId);
-    // Dummy response for testing
-    const copyResponse = { data: { id: 'dummy-id' } };
-    console.log('Dummy response used, id:', copyResponse.data.id);
-    res.status(200).json({ sheetId: copyResponse.data.id });
+    const copyResponse = await Promise.race([
+      drive.files.copy({
+        fileId: TEMPLATE_ID,
+        requestBody: {
+          name: outputName,
+          parents: [folderId]
+        }
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), 30000)) // 30 second timeout
+    ]);
+    console.log('Finished drive.files.copy');
+    const newSheetId = copyResponse.data.id;
+    console.log('Template copied, newSheetId:', newSheetId);
+    res.status(200).json({ sheetId: newSheetId });
   } catch (error) {
     console.error('Google Drive API error:', error, error.stack);
     res.status(500).json({ error: error.message || 'Google Drive API error', stack: error.stack });
