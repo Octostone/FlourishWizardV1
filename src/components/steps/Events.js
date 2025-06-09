@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Grid,
   TextField,
@@ -32,6 +32,7 @@ export default function Events() {
   const [rows, setRows] = useState([{ ...initialRow, id: 'row-0' }]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const rowsRef = useRef(rows);
 
   // Always initialize rows from formData.events if available
   useEffect(() => {
@@ -43,6 +44,18 @@ export default function Events() {
       setRows([{ ...initialRow, id: 'row-0' }]);
     }
   }, [formData.events]);
+
+  // Keep rowsRef in sync
+  useEffect(() => {
+    rowsRef.current = rows;
+  }, [rows]);
+
+  // On unmount, always update context with latest rows
+  useEffect(() => {
+    return () => {
+      updateFormData('events', rowsRef.current);
+    };
+  }, []);
 
   const validate = () => {
     for (const row of rows) {
@@ -159,17 +172,29 @@ export default function Events() {
       </Typography>
 
       <Box sx={{ width: '85%', mx: 'auto' }}>
-        {/* Column Headers */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1, px: 2 }}>
-          <Box sx={{ width: '80px', fontWeight: 600 }}>Position</Box>
-          <Box sx={{ width: '200px', fontWeight: 600 }}>Name</Box>
-          <Box sx={{ width: '180px', fontWeight: 600 }}>Postback Event Name</Box>
-          <Box sx={{ width: '100px', fontWeight: 600 }}>Estimated CR %</Box>
-          <Box sx={{ width: '120px', fontWeight: 600 }}>Estimated TTC</Box>
-          <Box sx={{ width: '100px', fontWeight: 600 }}>Expiration</Box>
-          <Box sx={{ width: '120px', fontWeight: 600 }}>Event Type</Box>
-          <Box sx={{ width: '150px', fontWeight: 600 }}>Pub Reve Source</Box>
-          <Box sx={{ width: '40px' }}></Box>
+        {/* Column Headers as grid */}
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: '80px 200px 180px 100px 120px 100px 120px 150px 40px',
+            alignItems: 'center',
+            mb: 1,
+            px: 2,
+            fontWeight: 600,
+            fontSize: 15,
+            textAlign: 'left',
+            gap: 2
+          }}
+        >
+          <Box sx={{ whiteSpace: 'normal', overflowWrap: 'break-word' }}>Position</Box>
+          <Box sx={{ whiteSpace: 'normal', overflowWrap: 'break-word' }}>Name</Box>
+          <Box sx={{ whiteSpace: 'normal', overflowWrap: 'break-word' }}>Postback Event Name</Box>
+          <Box sx={{ whiteSpace: 'normal', overflowWrap: 'break-word' }}>Estimated CR %</Box>
+          <Box sx={{ whiteSpace: 'normal', overflowWrap: 'break-word' }}>Estimated TTC</Box>
+          <Box sx={{ whiteSpace: 'normal', overflowWrap: 'break-word' }}>Expiration</Box>
+          <Box sx={{ whiteSpace: 'normal', overflowWrap: 'break-word' }}>Event Type</Box>
+          <Box sx={{ whiteSpace: 'normal', overflowWrap: 'break-word' }}>Pub Reve Source</Box>
+          <Box></Box>
         </Box>
         <DragDropContext onDragEnd={onDragEnd}>
           <Droppable droppableId="events">
@@ -182,7 +207,8 @@ export default function Events() {
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         sx={{
-                          display: 'flex',
+                          display: 'grid',
+                          gridTemplateColumns: '80px 200px 180px 100px 120px 100px 120px 150px 40px',
                           alignItems: 'center',
                           gap: 2,
                           mb: 3,
