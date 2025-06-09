@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Grid,
   TextField,
@@ -32,6 +32,15 @@ export default function Events() {
   const [rows, setRows] = useState([{ ...initialRow, id: 'row-0' }]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Initialize rows from formData.events if available
+  useEffect(() => {
+    if (Array.isArray(formData.events) && formData.events.length > 0) {
+      setRows(
+        formData.events.map((row, idx) => ({ ...row, id: row.id || `row-${idx}` }))
+      );
+    }
+  }, [formData.events]);
 
   const validate = () => {
     for (const row of rows) {

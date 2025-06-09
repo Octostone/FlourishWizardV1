@@ -67,9 +67,12 @@ function WizardContent() {
     }
   };
 
+  // For Events page, use a wider container
+  const isEventsStep = activeStep === 4;
+
   return (
-    <Container component="main" maxWidth="md">
-      <StyledPaper elevation={3}>
+    <Container component="main" maxWidth={isEventsStep ? false : "md"} sx={isEventsStep ? { width: '100%' } : {}}>
+      <StyledPaper elevation={3} sx={isEventsStep ? { width: '90%', mx: 'auto' } : {}}>
         <Typography component="h1" variant="h4" align="center" gutterBottom>
           Flourish Wizard
         </Typography>
