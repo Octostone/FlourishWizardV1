@@ -12,7 +12,7 @@ import {
 import { styled } from '@mui/material/styles';
 import { WizardProvider, useWizard } from '../src/context/WizardContext';
 import LandingPage from '../src/components/steps/ClientInfo';
-import ClientBasics from '../src/components/steps/ClientDetails';
+import ClientBasics from '../src/components/steps/ClientBasics';
 import ClientDetails from '../src/components/steps/ClientDetails';
 import AppInformation from '../src/components/steps/AppInformation';
 import Events from '../src/components/steps/Events';
@@ -43,14 +43,6 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
 
 function WizardContent() {
   const { formData, activeStep, setActiveStep } = useWizard();
-
-  const handleNext = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep + 1);
-  };
-
-  const handleBack = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep - 1);
-  };
 
   const renderStepContent = (step) => {
     switch (step) {
@@ -103,22 +95,6 @@ function WizardContent() {
           ) : (
             <>
               {renderStepContent(activeStep)}
-              {activeStep > 0 && (
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
-                  {activeStep !== 0 && (
-                    <Button onClick={handleBack} sx={{ mt: 3, ml: 1 }}>
-                      Back
-                    </Button>
-                  )}
-                  <Button
-                    variant="contained"
-                    onClick={handleNext}
-                    sx={{ mt: 3, ml: 1 }}
-                  >
-                    {activeStep === steps.length - 1 ? 'Submit' : 'Next'}
-                  </Button>
-                </Box>
-              )}
             </>
           )}
         </>
