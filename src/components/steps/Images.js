@@ -1,205 +1,194 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
-  Grid,
-  Typography,
-  Paper,
   Box,
-  IconButton,
+  Typography,
+  TextField,
   Button,
-  CircularProgress,
-  Alert
+  MenuItem,
+  InputLabel,
+  FormControl,
+  Select,
+  FormHelperText
 } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { useWizard } from '../../context/WizardContext';
 
+const geoOptions = ['US', 'CA', 'UK', 'AU', 'Other'];
+
 export default function Images() {
-  const { formData, addImage, removeImage } = useWizard();
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState(null);
+  const { formData, updateFormData, activeStep, setActiveStep } = useWizard();
+  const [fields, setFields] = useState({
+    flourishClientName: '',
+    appName: '',
+    geo: '',
+    icon: null,
+    iconUrl: ''
+  });
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef();
 
-  // Upload file to Google Drive via API route
-  const handleFileUpload = async (event) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
+  // Inherit Flourish Client Name from context if available
+  useEffect(() => {
+    setFields(prev => ({
+      ...prev,
+      flourishClientName: formData.clientBasics?.flourishClientName || '',
+      appName: formData.appInformation?.appName || '',
+      geo: formData.images?.geo || '',
+      iconUrl: formData.images?.iconUrl || ''
+    }));
+  }, [formData.clientBasics, formData.appInformation, formData.images]);
 
-    if (!formData.folderId) {
-      setError('No folder selected. Please go back to the first step and select a folder.');
+  // On unmount, persist to context
+  useEffect(() => {
+    return () => {
+      updateFormData('images', fields);
+    };
+  }, [fields, updateFormData]);
+
+  const validate = () => {
+    let valid = true;
+    let newErrors = {};
+    if (!fields.flourishClientName) {
+      newErrors.flourishClientName = 'Required';
+      valid = false;
+    }
+    if (!fields.appName) {
+      newErrors.appName = 'Required';
+      valid = false;
+    }
+    if (!fields.geo) {
+      newErrors.geo = 'Required';
+      valid = false;
+    }
+    if (!fields.icon && !fields.iconUrl) {
+      newErrors.icon = 'Icon is required';
+      valid = false;
+    }
+    setErrors(newErrors);
+    return valid;
+  };
+
+  const handleChange = (field, value) => {
+    setFields(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      setErrors(prev => ({ ...prev, icon: 'Only JPEG or PNG allowed' }));
       return;
     }
+    if (file.size > 100 * 1024) {
+      setErrors(prev => ({ ...prev, icon: 'File must be < 100kB' }));
+      return;
+    }
+    setErrors(prev => ({ ...prev, icon: undefined }));
+    handleChange('icon', file);
+    // For preview
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      handleChange('iconUrl', ev.target.result);
+    };
+    reader.readAsDataURL(file);
+  };
 
-    setUploading(true);
-    setError(null);
-
+  const handleNext = async () => {
+    if (!validate()) return;
+    setLoading(true);
     try {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        // Prepare form data for upload
-        const data = new FormData();
-        data.append('file', file);
-        data.append('folderId', formData.folderId);
-        data.append('action', 'upload');
-        // Call the API route
-        const response = await fetch('/api/googleDrive', {
-          method: 'POST',
-          body: data
-        });
-        if (!response.ok) {
-          const resData = await response.json();
-          throw new Error(resData.error || 'Failed to upload image');
-        }
-        const resData = await response.json();
-        addImage({
-          id: resData.id,
-          name: file.name,
-          url: resData.thumbnailLink || resData.webViewLink,
-          driveUrl: resData.webViewLink
-        });
-      }
-    } catch (error) {
-      console.error('Error uploading files:', error);
-      setError('Failed to upload images. Please try again.');
+      // TODO: Upload icon to backend or Google Drive if needed
+      updateFormData('images', fields);
+      setActiveStep(activeStep + 1);
+    } catch (err) {
+      setErrors({ icon: err.message || 'Failed to upload icon.' });
     } finally {
-      setUploading(false);
+      setLoading(false);
     }
   };
 
-  // Delete file from Google Drive via API route
-  const handleDelete = async (index, imageId) => {
-    try {
-      const response = await fetch('/api/googleDrive', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'delete', fileId: imageId })
-      });
-      if (!response.ok) {
-        const resData = await response.json();
-        throw new Error(resData.error || 'Failed to delete image');
-      }
-      removeImage(index);
-    } catch (error) {
-      console.error('Error deleting file:', error);
-      setError('Failed to delete image. Please try again.');
-    }
+  const handleBack = () => {
+    updateFormData('images', fields);
+    setActiveStep(activeStep - 1);
   };
-
-  if (!formData.folderId) {
-    return (
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-          <Alert severity="warning">
-            Please go back to the first step and select a Google Drive folder before uploading images.
-          </Alert>
-        </Grid>
-      </Grid>
-    );
-  }
 
   return (
-    <Grid container spacing={3}>
-      <Grid item xs={12}>
-        <Paper sx={{ p: 2, mb: 2 }}>
-          <Box
-            sx={{
-              border: '2px dashed #ccc',
-              borderRadius: 2,
-              p: 3,
-              textAlign: 'center'
-            }}
-          >
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleFileUpload}
-              style={{ display: 'none' }}
-              id="image-upload"
-              disabled={uploading}
-            />
-            <label htmlFor="image-upload">
-              <Button
-                variant="contained"
-                component="span"
-                startIcon={uploading ? <CircularProgress size={20} /> : <CloudUploadIcon />}
-                disabled={uploading}
-              >
-                {uploading ? 'Uploading...' : 'Upload Images'}
-              </Button>
-            </label>
-            <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-              Drag and drop images here or click to select files
-            </Typography>
+    <form autoComplete="off" onSubmit={e => e.preventDefault()}>
+      <Typography component="h2" variant="h5" align="center" gutterBottom>
+        Images
+      </Typography>
+      <Box sx={{ width: '66%', mx: 'auto', mt: 3 }}>
+        <Box display="flex" flexDirection="column" gap={3}>
+          <TextField
+            label="Flourish Client Name"
+            value={fields.flourishClientName}
+            onChange={e => handleChange('flourishClientName', e.target.value)}
+            error={!!errors.flourishClientName}
+            helperText={errors.flourishClientName}
+            required
+            fullWidth
+          />
+          <TextField
+            label="App Name"
+            value={fields.appName}
+            onChange={e => handleChange('appName', e.target.value)}
+            error={!!errors.appName}
+            helperText={errors.appName}
+            required
+            fullWidth
+          />
+          <FormControl fullWidth error={!!errors.geo}>
+            <InputLabel>Geo</InputLabel>
+            <Select
+              value={fields.geo}
+              label="Geo"
+              onChange={e => handleChange('geo', e.target.value)}
+              required
+            >
+              {geoOptions.map(option => (
+                <MenuItem key={option} value={option}>{option}</MenuItem>
+              ))}
+            </Select>
+            {errors.geo && <FormHelperText>{errors.geo}</FormHelperText>}
+          </FormControl>
+          <Box>
+            <Button
+              variant="outlined"
+              component="label"
+              sx={{ mb: 1 }}
+            >
+              Upload Icon (JPEG/PNG, &lt;100kB)
+              <input
+                type="file"
+                accept="image/jpeg,image/png"
+                hidden
+                ref={fileInputRef}
+                onChange={handleFileChange}
+              />
+            </Button>
+            {fields.iconUrl && (
+              <Box mt={1}>
+                <img
+                  src={fields.iconUrl}
+                  alt="Icon Preview"
+                  style={{ maxWidth: 80, maxHeight: 80, borderRadius: 8, border: '1px solid #ccc' }}
+                />
+              </Box>
+            )}
+            {errors.icon && (
+              <Typography color="error" variant="body2">{errors.icon}</Typography>
+            )}
           </Box>
-        </Paper>
-      </Grid>
-
-      {error && (
-        <Grid item xs={12}>
-          <Alert severity="error" onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        </Grid>
-      )}
-
-      <Grid item xs={12}>
-        <Typography variant="h6" gutterBottom>
-          Uploaded Images
-        </Typography>
-        <Grid container spacing={2}>
-          {formData.images.map((image, index) => (
-            <Grid item xs={12} sm={6} md={4} key={index}>
-              <Paper sx={{ p: 2 }}>
-                <Box
-                  sx={{
-                    position: 'relative',
-                    paddingTop: '100%',
-                    backgroundColor: '#f5f5f5',
-                    borderRadius: 1,
-                    overflow: 'hidden'
-                  }}
-                >
-                  <img
-                    src={image.url}
-                    alt={image.name}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover'
-                    }}
-                  />
-                </Box>
-                <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="body2" noWrap>
-                    {image.name}
-                  </Typography>
-                  <Box>
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      href={image.driveUrl}
-                      target="_blank"
-                      aria-label="view in drive"
-                    >
-                      <CloudUploadIcon />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => handleDelete(index, image.id)}
-                      aria-label="delete image"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                </Box>
-              </Paper>
-            </Grid>
-          ))}
-        </Grid>
-      </Grid>
-    </Grid>
+        </Box>
+        <Box display="flex" justifyContent="center" gap={3} mt={5}>
+          <Button variant="outlined" onClick={handleBack} sx={{ px: 4, py: 1 }}>
+            Back
+          </Button>
+          <Button variant="contained" onClick={handleNext} sx={{ px: 4, py: 1 }} disabled={loading}>
+            Next
+          </Button>
+        </Box>
+      </Box>
+    </form>
   );
 } 

@@ -172,29 +172,17 @@ export default function Events() {
       </Typography>
 
       <Box sx={{ width: '85%', mx: 'auto' }}>
-        {/* Column Headers as grid */}
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: '80px 200px 180px 100px 120px 100px 120px 150px 40px',
-            alignItems: 'center',
-            mb: 1,
-            px: 2,
-            fontWeight: 600,
-            fontSize: 15,
-            textAlign: 'left',
-            gap: 2
-          }}
-        >
-          <Box sx={{ whiteSpace: 'normal', overflowWrap: 'break-word' }}>Position</Box>
-          <Box sx={{ whiteSpace: 'normal', overflowWrap: 'break-word' }}>Name</Box>
-          <Box sx={{ whiteSpace: 'normal', overflowWrap: 'break-word' }}>Postback Event Name</Box>
-          <Box sx={{ whiteSpace: 'normal', overflowWrap: 'break-word' }}>Estimated CR %</Box>
-          <Box sx={{ whiteSpace: 'normal', overflowWrap: 'break-word' }}>Estimated TTC</Box>
-          <Box sx={{ whiteSpace: 'normal', overflowWrap: 'break-word' }}>Expiration</Box>
-          <Box sx={{ whiteSpace: 'normal', overflowWrap: 'break-word' }}>Event Type</Box>
-          <Box sx={{ whiteSpace: 'normal', overflowWrap: 'break-word' }}>Pub Reve Source</Box>
-          <Box></Box>
+        {/* Column Headers as flex */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1, px: 2 }}>
+          <Box sx={{ width: '80px', fontWeight: 600 }}>Position</Box>
+          <Box sx={{ width: '200px', fontWeight: 600 }}>Name</Box>
+          <Box sx={{ width: '180px', fontWeight: 600 }}>Postback Event Name</Box>
+          <Box sx={{ width: '100px', fontWeight: 600 }}>Estimated CR %</Box>
+          <Box sx={{ width: '120px', fontWeight: 600 }}>Estimated TTC</Box>
+          <Box sx={{ width: '100px', fontWeight: 600 }}>Expiration</Box>
+          <Box sx={{ width: '120px', fontWeight: 600 }}>Event Type</Box>
+          <Box sx={{ width: '150px', fontWeight: 600 }}>Pub Reve Source</Box>
+          <Box sx={{ width: '40px' }}></Box>
         </Box>
         <DragDropContext onDragEnd={onDragEnd}>
           <Droppable droppableId="events">
@@ -207,8 +195,7 @@ export default function Events() {
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         sx={{
-                          display: 'grid',
-                          gridTemplateColumns: '80px 200px 180px 100px 120px 100px 120px 150px 40px',
+                          display: 'flex',
                           alignItems: 'center',
                           gap: 2,
                           mb: 3,

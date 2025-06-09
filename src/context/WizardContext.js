@@ -3,7 +3,7 @@ import { createContext, useContext, useState } from 'react';
 const WizardContext = createContext();
 
 export function WizardProvider({ children }) {
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     // Client Info
     accountManager: '',
     outputName: '',
@@ -37,7 +37,8 @@ export function WizardProvider({ children }) {
     
     // Images
     images: []
-  });
+  };
+  const [formData, setFormData] = useState(initialFormData);
   const [activeStep, setActiveStep] = useState(0);
 
   // Row index state for each single-row tab
@@ -95,6 +96,15 @@ export function WizardProvider({ children }) {
     }));
   };
 
+  const resetWizard = () => {
+    setFormData(initialFormData);
+    setActiveStep(0);
+    setClientBasicsRowIndex(null);
+    setClientDetailsRowIndex(null);
+    setAppInfoRowIndex(null);
+    setCampaignRowIndex(null);
+  };
+
   return (
     <WizardContext.Provider value={{
       formData,
@@ -115,7 +125,8 @@ export function WizardProvider({ children }) {
       appInfoRowIndex,
       setAppInfoRowIndex,
       campaignRowIndex,
-      setCampaignRowIndex
+      setCampaignRowIndex,
+      resetWizard
     }}>
       {children}
     </WizardContext.Provider>
