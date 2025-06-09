@@ -33,12 +33,14 @@ export default function Events() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Initialize rows from formData.events if available
+  // Always initialize rows from formData.events if available
   useEffect(() => {
     if (Array.isArray(formData.events) && formData.events.length > 0) {
       setRows(
         formData.events.map((row, idx) => ({ ...row, id: row.id || `row-${idx}` }))
       );
+    } else {
+      setRows([{ ...initialRow, id: 'row-0' }]);
     }
   }, [formData.events]);
 
@@ -112,6 +114,7 @@ export default function Events() {
     if (!validate()) return;
     setLoading(true);
     try {
+      updateFormData('events', rows); // Save before navigation
       // Write to Google Sheet via API
       const response = await fetch('/api/sheets', {
         method: 'POST',
@@ -133,7 +136,6 @@ export default function Events() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Failed to write to sheet');
-      updateFormData('events', rows);
       setActiveStep(activeStep + 1);
     } catch (err) {
       setError(err.message || 'Failed to write to sheet.');
@@ -143,6 +145,7 @@ export default function Events() {
   };
 
   const handleBack = () => {
+    updateFormData('events', rows); // Save before navigation
     setActiveStep(activeStep - 1);
   };
 
@@ -156,6 +159,18 @@ export default function Events() {
       </Typography>
 
       <Box sx={{ width: '85%', mx: 'auto' }}>
+        {/* Column Headers */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1, px: 2 }}>
+          <Box sx={{ width: '80px', fontWeight: 600 }}>Position</Box>
+          <Box sx={{ width: '200px', fontWeight: 600 }}>Name</Box>
+          <Box sx={{ width: '180px', fontWeight: 600 }}>Postback Event Name</Box>
+          <Box sx={{ width: '100px', fontWeight: 600 }}>Estimated CR %</Box>
+          <Box sx={{ width: '120px', fontWeight: 600 }}>Estimated TTC</Box>
+          <Box sx={{ width: '100px', fontWeight: 600 }}>Expiration</Box>
+          <Box sx={{ width: '120px', fontWeight: 600 }}>Event Type</Box>
+          <Box sx={{ width: '150px', fontWeight: 600 }}>Pub Reve Source</Box>
+          <Box sx={{ width: '40px' }}></Box>
+        </Box>
         <DragDropContext onDragEnd={onDragEnd}>
           <Droppable droppableId="events">
             {(provided) => (
@@ -180,62 +195,48 @@ export default function Events() {
                         <Box {...provided.dragHandleProps}>
                           <DragHandleIcon />
                         </Box>
-                        
                         <TextField
                           size="small"
-                          placeholder="Position"
                           value={row.position}
                           onChange={(e) => handleChange(index, 'position', e.target.value.replace(/\D/g, '').slice(0, 3))}
                           sx={{ width: '80px' }}
                           inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
                         />
-                        
                         <TextField
                           size="small"
-                          placeholder="Name"
                           value={row.name}
                           onChange={(e) => handleChange(index, 'name', e.target.value.slice(0, 35))}
                           sx={{ width: '200px' }}
                         />
-                        
                         <TextField
                           size="small"
-                          placeholder="Postback Event Name"
                           value={row.postbackEventName}
                           onChange={(e) => handleChange(index, 'postbackEventName', e.target.value.slice(0, 25))}
                           sx={{ width: '180px' }}
                         />
-                        
                         <TextField
                           size="small"
-                          placeholder="Estimated CR %"
                           value={row.estimatedCR}
                           onChange={(e) => handleChange(index, 'estimatedCR', e.target.value.replace(/\D/g, '').slice(0, 3))}
                           sx={{ width: '100px' }}
                           inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
                         />
-                        
                         <TextField
                           size="small"
-                          placeholder="Estimated TTC"
                           value={row.estimatedTTC}
                           onChange={(e) => handleChange(index, 'estimatedTTC', e.target.value.replace(/\D/g, '').slice(0, 5))}
                           sx={{ width: '120px' }}
                           inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
                         />
-                        
                         <TextField
                           size="small"
-                          placeholder="Expiration"
                           value={row.expiration}
                           onChange={(e) => handleChange(index, 'expiration', e.target.value.slice(0, 7))}
                           sx={{ width: '100px' }}
                         />
-                        
                         <TextField
                           select
                           size="small"
-                          placeholder="Event Type"
                           value={row.eventType}
                           onChange={(e) => handleChange(index, 'eventType', e.target.value)}
                           sx={{ width: '120px' }}
@@ -246,11 +247,9 @@ export default function Events() {
                             </MenuItem>
                           ))}
                         </TextField>
-                        
                         <TextField
                           select
                           size="small"
-                          placeholder="Pub Reve Source"
                           value={row.pubReveSource}
                           onChange={(e) => handleChange(index, 'pubReveSource', e.target.value)}
                           sx={{ width: '150px' }}
@@ -261,7 +260,6 @@ export default function Events() {
                             </MenuItem>
                           ))}
                         </TextField>
-
                         <IconButton
                           color="error"
                           onClick={() => deleteRow(index)}
@@ -278,7 +276,6 @@ export default function Events() {
             )}
           </Droppable>
         </DragDropContext>
-
         <Box display="flex" justifyContent="center" mt={2}>
           <Button
             startIcon={<AddIcon />}
@@ -288,13 +285,11 @@ export default function Events() {
             Add Event
           </Button>
         </Box>
-
         {error && (
           <Box mt={2}>
             <Typography color="error" align="center">{error}</Typography>
           </Box>
         )}
-
         <Box display="flex" justifyContent="center" gap={3} mt={4}>
           <Button variant="outlined" onClick={handleBack} sx={{ px: 4, py: 1 }}>
             Back
