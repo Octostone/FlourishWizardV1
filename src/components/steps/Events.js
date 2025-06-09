@@ -110,7 +110,7 @@ export default function Events() {
         body: JSON.stringify({
           sheetId: formData.sheetId,
           tabName: 'Events',
-          rowData: rows.map(row => [
+          rows: rows.map(row => [
             row.position,
             row.name,
             row.postbackEventName,
@@ -146,7 +146,7 @@ export default function Events() {
         Please configure the events for tracking.
       </Typography>
 
-      <Box sx={{ width: '80%', mx: 'auto' }}>
+      <Box sx={{ width: '85%', mx: 'auto' }}>
         <DragDropContext onDragEnd={onDragEnd}>
           <Droppable droppableId="events">
             {(provided) => (
