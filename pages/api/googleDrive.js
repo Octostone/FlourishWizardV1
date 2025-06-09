@@ -22,7 +22,17 @@ async function handleTemplateCopy(req, res) {
     });
     const drive = google.drive({ version: 'v3', auth });
     const TEMPLATE_ID = '1vaW7egSNhsLoWVvG2VpqnUwdd_shiZ6fq0kpaj3vNbk';
-    console.log('About to call drive.files.copy');
+    // Check for duplicate file name in the folder
+    console.log('Checking for duplicate file name in folder:', folderId);
+    const listResponse = await drive.files.list({
+      q: `'${folderId}' in parents and name = '${outputName.replace(/'/g, "\\'")}' and trashed = false`,
+      fields: 'files(id, name)'
+    });
+    if (listResponse.data.files && listResponse.data.files.length > 0) {
+      console.warn('Duplicate file name found:', outputName);
+      return res.status(400).json({ error: 'A file with this name already exists in the selected folder. Please choose another name.' });
+    }
+    console.log('No duplicate found, proceeding to copy template.');
     const copyResponse = await Promise.race([
       drive.files.copy({
         fileId: TEMPLATE_ID,
