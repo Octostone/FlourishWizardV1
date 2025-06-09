@@ -15,11 +15,11 @@ const TEMPLATE_ID = '1vaW7egSNhsLoWVvG2VpqnUwdd_shiZ6fq0kpaj3vNbk';
 
 // Map button to step index
 const stepMap = {
-  newClient: 1,      // Client Basics
-  newApp: 3,         // App Information
-  newCampaign: 5,    // Campaign
-  newOffers: 6,      // Offers
-  updateImages: 7    // Images
+  newClient: 1,      // Client Basics (should be step 1)
+  newApp: 2,         // App Information (should be step 2)
+  newCampaign: 4,    // Campaign (should be step 4)
+  newOffers: 5,      // Offers (should be step 5)
+  updateImages: 6    // Images (should be step 6)
 };
 
 export default function LandingPage() {
