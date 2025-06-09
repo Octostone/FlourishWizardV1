@@ -40,6 +40,12 @@ export function WizardProvider({ children }) {
   });
   const [activeStep, setActiveStep] = useState(0);
 
+  // Row index state for each single-row tab
+  const [clientBasicsRowIndex, setClientBasicsRowIndex] = useState(null);
+  const [clientDetailsRowIndex, setClientDetailsRowIndex] = useState(null);
+  const [appInfoRowIndex, setAppInfoRowIndex] = useState(null);
+  const [campaignRowIndex, setCampaignRowIndex] = useState(null);
+
   const updateFormData = (section, data) => {
     setFormData(prev => ({
       ...prev,
@@ -100,7 +106,16 @@ export function WizardProvider({ children }) {
       addImage,
       removeImage,
       activeStep,
-      setActiveStep
+      setActiveStep,
+      // Row index state and setters
+      clientBasicsRowIndex,
+      setClientBasicsRowIndex,
+      clientDetailsRowIndex,
+      setClientDetailsRowIndex,
+      appInfoRowIndex,
+      setAppInfoRowIndex,
+      campaignRowIndex,
+      setCampaignRowIndex
     }}>
       {children}
     </WizardContext.Provider>

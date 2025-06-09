@@ -10,7 +10,7 @@ const accountManagers = [
 ];
 
 export default function ClientBasics() {
-  const { formData, updateFormData, activeStep, setActiveStep } = useWizard();
+  const { formData, updateFormData, activeStep, setActiveStep, clientBasicsRowIndex, setClientBasicsRowIndex } = useWizard();
   const [fields, setFields] = useState({
     clientDBAName: formData['Client DBA Name'] || '',
     billingName: formData['Billing Name'] || '',
@@ -45,7 +45,6 @@ export default function ClientBasics() {
     if (!validate()) return;
     setLoading(true);
     try {
-      // Write to Google Sheet via API
       const response = await fetch('/api/sheets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -56,11 +55,15 @@ export default function ClientBasics() {
             fields.clientDBAName,
             fields.billingName,
             fields.accountManager
-          ]
+          ],
+          rowIndex: clientBasicsRowIndex
         })
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Failed to write to sheet');
+      if (clientBasicsRowIndex == null && typeof result.rowIndex === 'number') {
+        setClientBasicsRowIndex(result.rowIndex);
+      }
       updateFormData('clientBasics', {
         'Client DBA Name': fields.clientDBAName,
         'Billing Name': fields.billingName,

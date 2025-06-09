@@ -10,7 +10,7 @@ const netGrossOptions = ['Net', 'Gross'];
 const baseCmOptions = ['Base', 'CM'];
 
 export default function ClientDetails() {
-  const { formData, updateFormData, activeStep, setActiveStep } = useWizard();
+  const { formData, updateFormData, activeStep, setActiveStep, clientDetailsRowIndex, setClientDetailsRowIndex } = useWizard();
   const [fields, setFields] = useState({
     mmp: formData['MMP'] || '',
     netGross: formData['Net/Gross'] || '',
@@ -48,7 +48,6 @@ export default function ClientDetails() {
     if (!validate()) return;
     setLoading(true);
     try {
-      // Write to Google Sheet via API
       const response = await fetch('/api/sheets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -61,11 +60,15 @@ export default function ClientDetails() {
             fields.grossDeduction,
             fields.baseCm,
             fields.flourishClientName
-          ]
+          ],
+          rowIndex: clientDetailsRowIndex
         })
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Failed to write to sheet');
+      if (clientDetailsRowIndex == null && typeof result.rowIndex === 'number') {
+        setClientDetailsRowIndex(result.rowIndex);
+      }
       updateFormData('clientDetails', {
         'MMP': fields.mmp,
         'Net/Gross': fields.netGross,
