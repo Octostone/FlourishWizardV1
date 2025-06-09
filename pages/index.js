@@ -21,7 +21,6 @@ import Offers from '../src/components/steps/Offers';
 import Images from '../src/components/steps/Images';
 
 const steps = [
-  'Landing Page',
   'Client Basics',
   'Client Details',
   'App Information',
