@@ -125,7 +125,6 @@ async function handleDelete(req, res) {
 
 export default async function handler(req, res) {
   console.log('API route hit');
-  return res.status(200).json({ test: 'API route is working' });
   try {
     console.log('API route called:', req.method, req.url);
     if (req.method === 'GET' && req.query.test === '1') {
@@ -153,6 +152,11 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Missing or invalid request body', details: body });
       }
       req.body = body;
+      // TEST RESPONSE after parsing
+      console.log('Test response after parsing body');
+      if (body.test === '1') {
+        return res.status(200).json({ test: 'API route is working after parsing' });
+      }
       if (body.action === 'delete') {
         console.log('Handling delete action');
         return await handleDelete(req, res);
