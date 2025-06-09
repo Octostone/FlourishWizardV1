@@ -15,14 +15,14 @@ const TEMPLATE_ID = '1vaW7egSNhsLoWVvG2VpqnUwdd_shiZ6fq0kpaj3vNbk';
 
 // Map button to step index
 const stepMap = {
-  newClient: 1, // Client Basics (was Client Details)
+  newClient: 1, // Client Basics
   newApp: 1,    // Client Basics
   newCampaign: 1, // Client Basics
   newOffers: 1, // Client Basics
-  updateImages: 6 // Images
+  updateImages: 7 // Images (now step 7)
 };
 
-export default function ClientInfo() {
+export default function LandingPage() {
   const { formData, updateFormData, setSheetId, setActiveStep } = useWizard();
   const [fields, setFields] = useState({
     accountManager: formData.accountManager || '',

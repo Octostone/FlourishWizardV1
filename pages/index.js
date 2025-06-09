@@ -11,7 +11,8 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { WizardProvider, useWizard } from '../src/context/WizardContext';
-import ClientInfo from '../src/components/steps/ClientInfo';
+import LandingPage from '../src/components/steps/ClientInfo';
+import ClientBasics from '../src/components/steps/ClientDetails';
 import ClientDetails from '../src/components/steps/ClientDetails';
 import AppInformation from '../src/components/steps/AppInformation';
 import Events from '../src/components/steps/Events';
@@ -20,7 +21,8 @@ import Offers from '../src/components/steps/Offers';
 import Images from '../src/components/steps/Images';
 
 const steps = [
-  'Client Information',
+  'Landing Page',
+  'Client Basics',
   'Client Details',
   'App Information',
   'Events',
@@ -55,18 +57,20 @@ function WizardContent() {
   const renderStepContent = (step) => {
     switch (step) {
       case 0:
-        return <ClientInfo setActiveStep={setActiveStep} />;
+        return <LandingPage setActiveStep={setActiveStep} />;
       case 1:
-        return <ClientDetails />;
+        return <ClientBasics />;
       case 2:
-        return <AppInformation />;
+        return <ClientDetails />;
       case 3:
-        return <Events />;
+        return <AppInformation />;
       case 4:
-        return <Campaign />;
+        return <Events />;
       case 5:
-        return <Offers />;
+        return <Campaign />;
       case 6:
+        return <Offers />;
+      case 7:
         return <Images />;
       default:
         throw new Error('Unknown step');

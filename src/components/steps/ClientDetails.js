@@ -3,7 +3,7 @@ import { Formik, Form } from 'formik';
 import { useWizard } from '../../context/WizardContext';
 import { clientDetailsSchema } from '../../validation/schemas';
 
-export default function ClientDetails() {
+export default function ClientBasics() {
   const { formData, updateFormData } = useWizard();
   const { clientName, clientEmail, clientPhone, clientWebsite } = formData;
 
