@@ -8,23 +8,6 @@ export const config = {
   },
 };
 
-async function parseJsonBody(req) {
-  return new Promise((resolve, reject) => {
-    let body = '';
-    req.on('data', chunk => {
-      body += chunk;
-    });
-    req.on('end', () => {
-      try {
-        resolve(JSON.parse(body));
-      } catch (e) {
-        console.error('Invalid JSON received:', body);
-        reject(new Error('Invalid JSON'));
-      }
-    });
-  });
-}
-
 async function handleTemplateCopy(req, res) {
   const { outputName, folderId } = req.body;
   console.log('handleTemplateCopy called with:', req.body);
@@ -138,20 +121,13 @@ export default async function handler(req, res) {
         console.log('Handling file upload');
         return await handleFileUpload(req, res);
       }
-      // Parse JSON body manually
-      let body;
-      try {
-        body = await parseJsonBody(req);
-        console.log('Parsed JSON body:', body);
-      } catch (e) {
-        console.error('Invalid JSON error:', e);
-        return res.status(400).json({ error: 'Invalid JSON', details: e.message });
-      }
+      // Use req.body directly
+      const body = req.body;
+      console.log('Received body:', body);
       if (!body || typeof body !== 'object') {
         console.error('Missing or invalid request body:', body);
         return res.status(400).json({ error: 'Missing or invalid request body', details: body });
       }
-      req.body = body;
       // TEST RESPONSE after parsing
       console.log('Test response after parsing body');
       if (body.test === '1') {
