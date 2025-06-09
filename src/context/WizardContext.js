@@ -38,6 +38,7 @@ export function WizardProvider({ children }) {
     // Images
     images: []
   });
+  const [activeStep, setActiveStep] = useState(0);
 
   const updateFormData = (section, data) => {
     setFormData(prev => ({
@@ -97,7 +98,9 @@ export function WizardProvider({ children }) {
       addOffer,
       removeOffer,
       addImage,
-      removeImage
+      removeImage,
+      activeStep,
+      setActiveStep
     }}>
       {children}
     </WizardContext.Provider>

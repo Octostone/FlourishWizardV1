@@ -43,8 +43,7 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
 }));
 
 function WizardContent() {
-  const [activeStep, setActiveStep] = useState(0);
-  const { formData } = useWizard();
+  const { formData, activeStep, setActiveStep } = useWizard();
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -57,7 +56,7 @@ function WizardContent() {
   const renderStepContent = (step) => {
     switch (step) {
       case 0:
-        return <LandingPage setActiveStep={setActiveStep} />;
+        return <LandingPage />;
       case 1:
         return <ClientBasics />;
       case 2:
