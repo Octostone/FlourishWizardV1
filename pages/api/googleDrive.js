@@ -124,6 +124,8 @@ async function handleDelete(req, res) {
 }
 
 export default async function handler(req, res) {
+  console.log('API route hit');
+  return res.status(200).json({ test: 'API route is working' });
   try {
     console.log('API route called:', req.method, req.url);
     if (req.method === 'GET' && req.query.test === '1') {
