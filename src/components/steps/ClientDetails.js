@@ -54,20 +54,24 @@ export default function ClientDetails() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sheetId: formData.sheetId,
-          tabName: 'ClientInfo',
+          tabName: 'ClientDetails',
           rowData: [
-            fields.clientDBAName,
-            fields.billingName,
-            fields.accountManager
+            fields.mmp,
+            fields.netGross,
+            fields.grossDeduction,
+            fields.baseCm,
+            fields.flourishClientName
           ]
         })
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Failed to write to sheet');
-      updateFormData('clientBasics', {
-        'Client DBA Name': fields.clientDBAName,
-        'Billing Name': fields.billingName,
-        'Account Manager': fields.accountManager
+      updateFormData('clientDetails', {
+        'MMP': fields.mmp,
+        'Net/Gross': fields.netGross,
+        'Gross Deduction': fields.grossDeduction,
+        'Base/CM': fields.baseCm,
+        'Flourish Client Name': fields.flourishClientName
       });
       setActiveStep(activeStep + 1);
     } catch (err) {
