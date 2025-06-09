@@ -49,10 +49,10 @@ async function handleTemplateCopy(req, res) {
     });
     const newSheetId = copyResponse.data.id;
     console.log('Template copied, newSheetId:', newSheetId);
-    return res.status(200).json({ sheetId: newSheetId });
+    res.status(200).json({ sheetId: newSheetId });
   } catch (error) {
     console.error('Google Drive API error:', error, error.stack);
-    return res.status(500).json({ error: error.message || 'Google Drive API error', stack: error.stack });
+    res.status(500).json({ error: error.message || 'Google Drive API error', stack: error.stack });
   }
 }
 
@@ -88,10 +88,10 @@ async function handleFileUpload(req, res) {
         media,
         fields: 'id, webViewLink, thumbnailLink'
       });
-      return res.status(200).json(uploadResponse.data);
+      res.status(200).json(uploadResponse.data);
     } catch (error) {
       console.error('Google Drive upload error:', error, error.stack);
-      return res.status(500).json({ error: error.message || 'Google Drive upload error', stack: error.stack });
+      res.status(500).json({ error: error.message || 'Google Drive upload error', stack: error.stack });
     }
   });
 }
@@ -109,10 +109,10 @@ async function handleDelete(req, res) {
     });
     const drive = google.drive({ version: 'v3', auth });
     await drive.files.delete({ fileId });
-    return res.status(200).json({ success: true });
+    res.status(200).json({ success: true });
   } catch (error) {
     console.error('Google Drive delete error:', error, error.stack);
-    return res.status(500).json({ error: error.message || 'Google Drive delete error', stack: error.stack });
+    res.status(500).json({ error: error.message || 'Google Drive delete error', stack: error.stack });
   }
 }
 
