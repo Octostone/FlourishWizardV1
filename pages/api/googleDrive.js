@@ -127,14 +127,17 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, message: 'API route is working' });
     }
     if (req.method === 'POST') {
+      console.log('POST request received');
       // Handle file upload (multipart/form-data)
       if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
+        console.log('Handling file upload');
         return await handleFileUpload(req, res);
       }
       // Parse JSON body manually
       let body;
       try {
         body = await parseJsonBody(req);
+        console.log('Parsed JSON body:', body);
       } catch (e) {
         console.error('Invalid JSON error:', e);
         return res.status(400).json({ error: 'Invalid JSON', details: e.message });
@@ -145,9 +148,11 @@ export default async function handler(req, res) {
       }
       req.body = body;
       if (body.action === 'delete') {
+        console.log('Handling delete action');
         return await handleDelete(req, res);
       }
       // Default: template copy
+      console.log('Handling template copy');
       return await handleTemplateCopy(req, res);
     } else {
       console.error('Method not allowed:', req.method);
