@@ -19,6 +19,7 @@ import Events from '../src/components/steps/Events';
 import Campaign from '../src/components/steps/Campaign';
 import Offers from '../src/components/steps/Offers';
 import Images from '../src/components/steps/Images';
+import Finish from '../src/components/steps/Finish';
 
 const steps = [
   'Client Basics',
@@ -27,7 +28,8 @@ const steps = [
   'Events',
   'Campaign',
   'Offers',
-  'Images'
+  'Images',
+  'Finish'
 ];
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -62,6 +64,8 @@ function WizardContent() {
         return <Offers />;
       case 7:
         return <Images />;
+      case 8:
+        return <Finish />;
       default:
         throw new Error('Unknown step');
     }
@@ -85,22 +89,7 @@ function WizardContent() {
             ))}
           </Stepper>
         )}
-        <>
-          {activeStep === steps.length ? (
-            <>
-              <Typography variant="h5" gutterBottom>
-                Thank you for your submission.
-              </Typography>
-              <Typography variant="subtitle1">
-                Your form has been submitted successfully.
-              </Typography>
-            </>
-          ) : (
-            <>
-              {renderStepContent(activeStep)}
-            </>
-          )}
-        </>
+        {renderStepContent(activeStep)}
       </StyledPaper>
     </Container>
   );

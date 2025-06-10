@@ -1,11 +1,15 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useCallback } from 'react';
 
 const WizardContext = createContext();
 
 export function WizardProvider({ children }) {
   const initialFormData = {
-    // Client Info
+    // Shared fields across pages
     accountManager: '',
+    flourishClientName: '',
+    geo: '',
+    
+    // Client Info
     outputName: '',
     folderId: '', // Google Drive folder ID
     folderUrl: '', // Google Drive folder URL
@@ -36,8 +40,10 @@ export function WizardProvider({ children }) {
     offers: [],
     
     // Images
-    images: []
+    iconImage: null,
+    carouselImage: null
   };
+
   const [formData, setFormData] = useState(initialFormData);
   const [activeStep, setActiveStep] = useState(0);
 
@@ -46,6 +52,19 @@ export function WizardProvider({ children }) {
   const [clientDetailsRowIndex, setClientDetailsRowIndex] = useState(null);
   const [appInfoRowIndex, setAppInfoRowIndex] = useState(null);
   const [campaignRowIndex, setCampaignRowIndex] = useState(null);
+
+  // Helper to update shared fields
+  const updateSharedField = useCallback((field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  }, []);
+
+  // Helper to get shared field value
+  const getSharedField = useCallback((field) => {
+    return formData[field] || '';
+  }, [formData]);
 
   const updateFormData = (section, data) => {
     setFormData(prev => ({
@@ -82,20 +101,6 @@ export function WizardProvider({ children }) {
     }));
   };
 
-  const addImage = (image) => {
-    setFormData(prev => ({
-      ...prev,
-      images: [...prev.images, image]
-    }));
-  };
-
-  const removeImage = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
-  };
-
   const resetWizard = () => {
     setFormData(initialFormData);
     setActiveStep(0);
@@ -109,12 +114,12 @@ export function WizardProvider({ children }) {
     <WizardContext.Provider value={{
       formData,
       updateFormData,
+      updateSharedField,
+      getSharedField,
       addEvent,
       removeEvent,
       addOffer,
       removeOffer,
-      addImage,
-      removeImage,
       activeStep,
       setActiveStep,
       // Row index state and setters
