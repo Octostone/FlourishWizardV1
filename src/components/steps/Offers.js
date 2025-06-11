@@ -224,20 +224,20 @@ export default function Offers() {
       <Typography align="center" sx={{ mb: 3 }}>
         Please add and configure offers for this campaign.
       </Typography>
-      <Box sx={{ width: '80%', mx: 'auto' }}>
+      <Box sx={{ width: '85%', mx: 'auto' }}>
         {/* Column Headers */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1, px: 2 }}>
-          <Box sx={{ width: '100px', fontWeight: 600 }}>Geo</Box>
-          <Box sx={{ width: '100px', fontWeight: 600 }}>Gender</Box>
-          <Box sx={{ width: '80px', fontWeight: 600 }}>Min Age</Box>
-          <Box sx={{ width: '80px', fontWeight: 600 }}>Max Age</Box>
-          <Box sx={{ width: '80px', fontWeight: 600 }}>Min OS</Box>
-          <Box sx={{ width: '80px', fontWeight: 600 }}>Max OS</Box>
-          <Box sx={{ width: '100px', fontWeight: 600 }}>CPI</Box>
-          <Box sx={{ width: '100px', fontWeight: 600 }}>CPI Override</Box>
-          <Box sx={{ width: '120px', fontWeight: 600 }}>Daily Budget</Box>
-          <Box sx={{ width: '100px', fontWeight: 600 }}>Daily Cap</Box>
-          <Box sx={{ width: '200px', fontWeight: 600 }}>Client Offer Name</Box>
+          <Box sx={{ width: '120px', fontWeight: 600 }}>Geo</Box>
+          <Box sx={{ width: '120px', fontWeight: 600 }}>Gender</Box>
+          <Box sx={{ width: '100px', fontWeight: 600 }}>Min Age</Box>
+          <Box sx={{ width: '100px', fontWeight: 600 }}>Max Age</Box>
+          <Box sx={{ width: '100px', fontWeight: 600 }}>Min OS</Box>
+          <Box sx={{ width: '100px', fontWeight: 600 }}>Max OS</Box>
+          <Box sx={{ width: '120px', fontWeight: 600 }}>CPI</Box>
+          <Box sx={{ width: '120px', fontWeight: 600 }}>CPI Override</Box>
+          <Box sx={{ width: '140px', fontWeight: 600 }}>Daily Budget</Box>
+          <Box sx={{ width: '120px', fontWeight: 600 }}>Daily Cap</Box>
+          <Box sx={{ width: '220px', fontWeight: 600 }}>Client Offer Name</Box>
           <Box sx={{ width: '40px' }}></Box>
         </Box>
 
@@ -255,7 +255,7 @@ export default function Offers() {
               boxShadow: 1
             }}
           >
-            <FormControl sx={{ width: '100px' }} error={!!errors[index]?.geo}>
+            <FormControl sx={{ width: '120px' }} error={!!errors[index]?.geo}>
               <Select
                 value={row.geo}
                 onChange={(e) => handleChange(index, 'geo', e.target.value)}
@@ -268,7 +268,7 @@ export default function Offers() {
               {errors[index]?.geo && <FormHelperText>{errors[index].geo}</FormHelperText>}
             </FormControl>
 
-            <FormControl sx={{ width: '100px' }} error={!!errors[index]?.gender}>
+            <FormControl sx={{ width: '120px' }} error={!!errors[index]?.gender}>
               <Select
                 value={row.gender}
                 onChange={(e) => handleChange(index, 'gender', e.target.value)}
@@ -287,7 +287,7 @@ export default function Offers() {
               onChange={(e) => handleChange(index, 'minAge', e.target.value.replace(/[^\d]/g, ''))}
               error={!!errors[index]?.minAge}
               helperText={errors[index]?.minAge}
-              sx={{ width: '80px' }}
+              sx={{ width: '100px' }}
             />
 
             <TextField
@@ -296,7 +296,7 @@ export default function Offers() {
               onChange={(e) => handleChange(index, 'maxAge', e.target.value.replace(/[^\d]/g, ''))}
               error={!!errors[index]?.maxAge}
               helperText={errors[index]?.maxAge}
-              sx={{ width: '80px' }}
+              sx={{ width: '100px' }}
             />
 
             <TextField
@@ -305,7 +305,7 @@ export default function Offers() {
               onChange={(e) => handleChange(index, 'minOS', e.target.value.replace(/[^\d]/g, ''))}
               error={!!errors[index]?.minOS}
               helperText={errors[index]?.minOS}
-              sx={{ width: '80px' }}
+              sx={{ width: '100px' }}
             />
 
             <TextField
@@ -314,7 +314,7 @@ export default function Offers() {
               onChange={(e) => handleChange(index, 'maxOS', e.target.value.replace(/[^\d]/g, ''))}
               error={!!errors[index]?.maxOS}
               helperText={errors[index]?.maxOS}
-              sx={{ width: '80px' }}
+              sx={{ width: '100px' }}
             />
 
             <TextField
@@ -323,7 +323,7 @@ export default function Offers() {
               onChange={(e) => handleChange(index, 'cpi', e.target.value.replace(/[^\d.]/g, ''))}
               error={!!errors[index]?.cpi}
               helperText={errors[index]?.cpi}
-              sx={{ width: '100px' }}
+              sx={{ width: '120px' }}
             />
 
             <TextField
@@ -332,7 +332,7 @@ export default function Offers() {
               onChange={(e) => handleChange(index, 'cpiOverride', e.target.value.replace(/[^\d.]/g, ''))}
               error={!!errors[index]?.cpiOverride}
               helperText={errors[index]?.cpiOverride}
-              sx={{ width: '100px' }}
+              sx={{ width: '120px' }}
             />
 
             <TextField
@@ -344,7 +344,7 @@ export default function Offers() {
               }}
               error={!!errors[index]?.dailyBudget}
               helperText={errors[index]?.dailyBudget}
-              sx={{ width: '120px' }}
+              sx={{ width: '140px' }}
             />
 
             <TextField
@@ -356,7 +356,7 @@ export default function Offers() {
               }}
               error={!!errors[index]?.dailyCap}
               helperText={errors[index]?.dailyCap}
-              sx={{ width: '100px' }}
+              sx={{ width: '120px' }}
             />
 
             <TextField
@@ -365,7 +365,7 @@ export default function Offers() {
               onChange={(e) => handleChange(index, 'clientOfferName', e.target.value.replace(/\s/g, ''))}
               error={!!errors[index]?.clientOfferName}
               helperText={errors[index]?.clientOfferName}
-              sx={{ width: '200px' }}
+              sx={{ width: '220px' }}
             />
 
             <IconButton
