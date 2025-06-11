@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { WizardProvider, useWizard } from '../src/context/WizardContext';
-import LandingPage from '../src/components/steps/ClientInfo';
+import LandingPage from '../src/components/steps/LandingPage';
 import ClientBasics from '../src/components/steps/ClientBasics';
 import ClientDetails from '../src/components/steps/ClientDetails';
 import AppInformation from '../src/components/steps/AppInformation';
