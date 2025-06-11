@@ -12,15 +12,16 @@ const accountManagers = [
 export default function ClientBasics() {
   const { formData, updateFormData, activeStep, setActiveStep, clientBasicsRowIndex, setClientBasicsRowIndex } = useWizard();
   const [fields, setFields] = useState({
-    clientDBAName: formData['Client DBA Name'] || '',
-    billingName: formData['Billing Name'] || '',
-    accountManager: formData['Account Manager'] || formData.accountManager || ''
+    clientName: formData.clientName || '',
+    billingName: formData.billingName || '',
+    accountManager: formData.accountManager || '',
+    flourishClientName: formData.flourishClientName || ''
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const validate = () => {
-    if (!fields.clientDBAName) {
+    if (!fields.clientName) {
       setError('Please enter the client common name or DBA name.');
       return false;
     }
@@ -30,6 +31,10 @@ export default function ClientBasics() {
     }
     if (!fields.accountManager || fields.accountManager === '-- Select --') {
       setError('Please select an account manager.');
+      return false;
+    }
+    if (!fields.flourishClientName) {
+      setError('Please enter the Flourish client name.');
       return false;
     }
     setError('');
@@ -52,9 +57,10 @@ export default function ClientBasics() {
           sheetId: formData.sheetId,
           tabName: 'ClientInfo',
           rowData: [
-            fields.clientDBAName,
+            fields.clientName,
             fields.billingName,
-            fields.accountManager
+            fields.accountManager,
+            fields.flourishClientName
           ],
           rowIndex: clientBasicsRowIndex
         })
@@ -65,10 +71,13 @@ export default function ClientBasics() {
         setClientBasicsRowIndex(result.rowIndex);
       }
       updateFormData('clientBasics', {
-        'Client DBA Name': fields.clientDBAName,
-        'Billing Name': fields.billingName,
-        'Account Manager': fields.accountManager
+        clientName: fields.clientName,
+        billingName: fields.billingName,
+        accountManager: fields.accountManager,
+        flourishClientName: fields.flourishClientName
       });
+      updateFormData('accountManager', fields.accountManager);
+      updateFormData('flourishClientName', fields.flourishClientName);
       setActiveStep(activeStep + 1);
     } catch (err) {
       setError(err.message || 'Failed to write to sheet.');
@@ -94,8 +103,8 @@ export default function ClientBasics() {
           <TextField
             fullWidth
             label="Client Common Name or DBA Name"
-            name="clientDBAName"
-            value={fields.clientDBAName}
+            name="clientName"
+            value={fields.clientName}
             onChange={handleChange}
             required
           />
@@ -106,6 +115,16 @@ export default function ClientBasics() {
             label="Client Billing Name"
             name="billingName"
             value={fields.billingName}
+            onChange={handleChange}
+            required
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            label="Flourish Client Name"
+            name="flourishClientName"
+            value={fields.flourishClientName}
             onChange={handleChange}
             required
           />

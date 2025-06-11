@@ -30,13 +30,14 @@ export default function AppInformation() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
-  // Pre-populate client name if available
+  // Pre-populate fields from shared context
   useEffect(() => {
-    setFields((prev) => ({
+    setFields(prev => ({
       ...prev,
-      clientName: formData.flourishClientName || ''
+      flourishClientName: formData.flourishClientName || '',
+      appName: formData.appName || ''
     }));
-  }, [formData.flourishClientName]);
+  }, [formData.flourishClientName, formData.appName]);
 
   // Validation logic
   const validate = () => {
@@ -89,6 +90,11 @@ export default function AppInformation() {
     if (!validate()) return;
     setLoading(true);
     try {
+      // First update the shared fields
+      updateFormData('flourishClientName', fields.flourishClientName);
+      updateFormData('appName', fields.appName);
+
+      // Then write to the sheet
       const response = await fetch('/api/sheets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -96,7 +102,7 @@ export default function AppInformation() {
           sheetId: formData.sheetId,
           tabName: 'AppInfo',
           rowData: [
-            fields.clientName,
+            fields.flourishClientName,
             fields.appName,
             fields.os,
             fields.storeUrl,
@@ -108,12 +114,27 @@ export default function AppInformation() {
           rowIndex: appInfoRowIndex
         })
       });
+
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Failed to write to sheet');
+      
       if (appInfoRowIndex == null && typeof result.rowIndex === 'number') {
         setAppInfoRowIndex(result.rowIndex);
       }
-      updateFormData('appInfo', fields);
+
+      // Update the form data
+      updateFormData('appInfo', {
+        flourishClientName: fields.flourishClientName,
+        appName: fields.appName,
+        os: fields.os,
+        storeUrl: fields.storeUrl,
+        reAttributionDays: fields.reAttributionDays,
+        category1: fields.category1,
+        category2: fields.category2,
+        category3: fields.category3
+      });
+
+      // Finally, navigate to the next step
       setActiveStep(activeStep + 1);
     } catch (err) {
       setErrors({ form: err.message || 'Failed to write to sheet.' });
